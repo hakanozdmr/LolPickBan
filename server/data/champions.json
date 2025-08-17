@@ -1,0 +1,202 @@
+[
+  {
+    "id": "ahri",
+    "name": "Ahri",
+    "title": "The Nine-Tailed Fox",
+    "roles": ["Mid"],
+    "classes": ["Mage", "Assassin"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "zed",
+    "name": "Zed",
+    "title": "The Master of Shadows",
+    "roles": ["Mid"],
+    "classes": ["Assassin"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "garen",
+    "name": "Garen",
+    "title": "The Might of Demacia",
+    "roles": ["Top"],
+    "classes": ["Fighter", "Tank"],
+    "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "ashe",
+    "name": "Ashe",
+    "title": "The Frost Archer",
+    "roles": ["ADC"],
+    "classes": ["Marksman"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "soraka",
+    "name": "Soraka",
+    "title": "The Starchild",
+    "roles": ["Support"],
+    "classes": ["Support", "Mage"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "graves",
+    "name": "Graves",
+    "title": "The Outlaw",
+    "roles": ["Jungle"],
+    "classes": ["Marksman"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "malphite",
+    "name": "Malphite",
+    "title": "Shard of the Monolith",
+    "roles": ["Top"],
+    "classes": ["Tank"],
+    "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "lux",
+    "name": "Lux",
+    "title": "The Lady of Luminosity",
+    "roles": ["Mid", "Support"],
+    "classes": ["Mage"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "yasuo",
+    "name": "Yasuo",
+    "title": "The Unforgiven",
+    "roles": ["Mid", "Top"],
+    "classes": ["Fighter", "Assassin"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "jinx",
+    "name": "Jinx",
+    "title": "The Loose Cannon",
+    "roles": ["ADC"],
+    "classes": ["Marksman"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "thresh",
+    "name": "Thresh",
+    "title": "The Chain Warden",
+    "roles": ["Support"],
+    "classes": ["Support", "Tank"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "leeSin",
+    "name": "Lee Sin",
+    "title": "The Blind Monk",
+    "roles": ["Jungle"],
+    "classes": ["Fighter", "Assassin"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "darius",
+    "name": "Darius",
+    "title": "The Hand of Noxus",
+    "roles": ["Top"],
+    "classes": ["Fighter", "Tank"],
+    "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "vayne",
+    "name": "Vayne",
+    "title": "The Night Hunter",
+    "roles": ["ADC"],
+    "classes": ["Marksman", "Assassin"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "azir",
+    "name": "Azir",
+    "title": "The Emperor of the Sands",
+    "roles": ["Mid"],
+    "classes": ["Mage", "Marksman"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "janna",
+    "name": "Janna",
+    "title": "The Storm's Fury",
+    "roles": ["Support"],
+    "classes": ["Support", "Mage"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "katarina",
+    "name": "Katarina",
+    "title": "The Sinister Blade",
+    "roles": ["Mid"],
+    "classes": ["Assassin"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "draven",
+    "name": "Draven",
+    "title": "The Glorious Executioner",
+    "roles": ["ADC"],
+    "classes": ["Marksman"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "alistar",
+    "name": "Alistar",
+    "title": "The Minotaur",
+    "roles": ["Support"],
+    "classes": ["Tank", "Support"],
+    "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "khazix",
+    "name": "Kha'Zix",
+    "title": "The Voidreaver",
+    "roles": ["Jungle"],
+    "classes": ["Assassin"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "fiora",
+    "name": "Fiora",
+    "title": "The Grand Duelist",
+    "roles": ["Top"],
+    "classes": ["Fighter", "Assassin"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "ziggs",
+    "name": "Ziggs",
+    "title": "The Hexplosives Expert",
+    "roles": ["Mid"],
+    "classes": ["Mage"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "ezreal",
+    "name": "Ezreal",
+    "title": "The Prodigal Explorer",
+    "roles": ["ADC"],
+    "classes": ["Marksman", "Mage"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "blitzcrank",
+    "name": "Blitzcrank",
+    "title": "The Great Steam Golem",
+    "roles": ["Support"],
+    "classes": ["Tank", "Fighter"],
+    "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  },
+  {
+    "id": "elise",
+    "name": "Elise",
+    "title": "The Spider Queen",
+    "roles": ["Jungle"],
+    "classes": ["Mage", "Fighter"],
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&h=120"
+  }
+]
