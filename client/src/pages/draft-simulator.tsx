@@ -28,7 +28,7 @@ export default function DraftSimulator() {
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [timer, setTimer] = useState(30);
   const [draftSessionId, setDraftSessionId] = useState<string | null>(null);
-  const [showStartModal, setShowStartModal] = useState(false);
+  const [showStartModal, setShowStartModal] = useState(true);
 
   // Fetch champions
   const { data: champions = [], isLoading: championsLoading } = useQuery<Champion[]>({

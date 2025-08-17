@@ -10,11 +10,11 @@ export class AudioGenerator {
     return this.audioContext;
   }
 
-  // Create authentic LoL draft music (champion select theme)
+  // Create EPIC League of Legends Worlds-style draft music
   static createDraftMusic(): AudioBuffer {
     const ctx = this.getAudioContext();
     const sampleRate = ctx.sampleRate;
-    const duration = 15; // 15 seconds loop like LoL
+    const duration = 45; // 45 seconds of epic music like Worlds
     const buffer = ctx.createBuffer(2, sampleRate * duration, sampleRate);
 
     for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
@@ -23,46 +23,129 @@ export class AudioGenerator {
       for (let i = 0; i < channelData.length; i++) {
         const time = i / sampleRate;
         
-        // LoL-style epic orchestral progression
-        // Main heroic melody line (similar to champion select theme)
-        const melody1 = Math.sin(2 * Math.PI * 146.83 * time) * 0.25; // D3
-        const melody2 = Math.sin(2 * Math.PI * 174.61 * time) * 0.2;  // F3
-        const melody3 = Math.sin(2 * Math.PI * 196.00 * time) * 0.22; // G3
-        const melody4 = Math.sin(2 * Math.PI * 220.00 * time) * 0.18; // A3
+        // EPIC progression phases
+        const phase1 = time < 8; // Intro build
+        const phase2 = time >= 8 && time < 20; // First crescendo
+        const phase3 = time >= 20 && time < 35; // Epic climax
+        const phase4 = time >= 35; // Grand finale
         
-        // Epic bass foundation
-        const bass = Math.sin(2 * Math.PI * 73.42 * time) * 0.35; // D2
-        const subBass = Math.sin(2 * Math.PI * 36.71 * time) * 0.2; // D1
-        
-        // Orchestral strings harmony
-        const strings1 = Math.sin(2 * Math.PI * 293.66 * time) * 0.15; // D4
-        const strings2 = Math.sin(2 * Math.PI * 349.23 * time) * 0.12; // F4
-        const strings3 = Math.sin(2 * Math.PI * 392.00 * time) * 0.1;  // G4
-        
-        // Heroic brass section
-        const brass1 = Math.sin(2 * Math.PI * 146.83 * 2 * time) * 0.18; // D4
-        const brass2 = Math.sin(2 * Math.PI * 196.00 * 2 * time) * 0.15; // G4
-        
-        // Epic timpani-like percussion
-        const timpani = Math.sin(2 * Math.PI * 60 * time) * Math.exp(-((time % 2) * 8)) * 0.3;
-        
-        // Cinematic reverb and atmosphere
-        const atmosphere = Math.sin(2 * Math.PI * 440 * time) * 0.05 * Math.sin(2 * Math.PI * 0.1 * time);
-        
-        // Dynamic progression (builds up over time)
-        const progression = Math.min(1, time / 3); // Build up over 3 seconds
-        
-        // Combine all elements with LoL-style epic feel
-        const combined = (
-          (melody1 + melody2 + melody3 + melody4) * progression +
-          (bass + subBass) * 0.8 +
-          (strings1 + strings2 + strings3) * progression * 0.7 +
-          (brass1 + brass2) * progression * 0.6 +
-          timpani * 0.5 +
-          atmosphere
+        // Main heroic melody (Worlds-style anthem progression)
+        // Key of D minor for epic feel
+        const heroicMelody = (
+          Math.sin(2 * Math.PI * 146.83 * time) * 0.3 + // D3
+          Math.sin(2 * Math.PI * 164.81 * time) * 0.25 + // E3
+          Math.sin(2 * Math.PI * 174.61 * time) * 0.28 + // F3
+          Math.sin(2 * Math.PI * 196.00 * time) * 0.32 + // G3
+          Math.sin(2 * Math.PI * 220.00 * time) * 0.3 + // A3
+          Math.sin(2 * Math.PI * 233.08 * time) * 0.25 + // Bb3
+          Math.sin(2 * Math.PI * 261.63 * time) * 0.35 // C4
         );
         
-        channelData[i] = combined * 0.4; // Master volume
+        // Epic orchestral strings (sweeping like Worlds music)
+        const orchestralStrings = (
+          Math.sin(2 * Math.PI * 293.66 * time) * 0.2 + // D4
+          Math.sin(2 * Math.PI * 329.63 * time) * 0.18 + // E4
+          Math.sin(2 * Math.PI * 349.23 * time) * 0.22 + // F4
+          Math.sin(2 * Math.PI * 392.00 * time) * 0.25 + // G4
+          Math.sin(2 * Math.PI * 440.00 * time) * 0.23 + // A4
+          Math.sin(2 * Math.PI * 466.16 * time) * 0.18 + // Bb4
+          Math.sin(2 * Math.PI * 523.25 * time) * 0.28 // C5
+        );
+        
+        // MASSIVE bass foundation (like Worlds theme)
+        const epicBass = (
+          Math.sin(2 * Math.PI * 36.71 * time) * 0.4 + // D1
+          Math.sin(2 * Math.PI * 43.65 * time) * 0.35 + // F1
+          Math.sin(2 * Math.PI * 49.00 * time) * 0.38 + // G1
+          Math.sin(2 * Math.PI * 73.42 * time) * 0.32 // D2
+        );
+        
+        // Heroic brass section (triumphant like Worlds)
+        const heroicBrass = (
+          Math.sin(2 * Math.PI * 146.83 * time) * 0.25 + // D3
+          Math.sin(2 * Math.PI * 196.00 * time) * 0.28 + // G3
+          Math.sin(2 * Math.PI * 220.00 * time) * 0.3 + // A3
+          Math.sin(2 * Math.PI * 293.66 * time) * 0.22 + // D4
+          Math.sin(2 * Math.PI * 392.00 * time) * 0.26 // G4
+        );
+        
+        // Epic percussion (like Worlds drums)
+        const epicPercussion = (
+          Math.sin(2 * Math.PI * 60 * time) * Math.exp(-((time % 4) * 2)) * 0.4 + // Timpani
+          Math.sin(2 * Math.PI * 80 * time) * Math.exp(-((time % 3) * 3)) * 0.35 + // Bass drum
+          Math.sin(2 * Math.PI * 120 * time) * Math.exp(-((time % 2) * 4)) * 0.3 // Snare
+        );
+        
+        // Ethereal atmosphere (magical League feel)
+        const magicalAtmosphere = (
+          Math.sin(2 * Math.PI * 1046.50 * time) * 0.08 * Math.sin(2 * Math.PI * 0.3 * time) + // C6
+          Math.sin(2 * Math.PI * 1174.66 * time) * 0.06 * Math.sin(2 * Math.PI * 0.2 * time) + // D6
+          Math.sin(2 * Math.PI * 1318.51 * time) * 0.05 * Math.sin(2 * Math.PI * 0.4 * time) // E6
+        );
+        
+        // Dynamic progression and intensity
+        let intensity = 0.3;
+        let melodyVolume = 0.2;
+        let bassVolume = 0.3;
+        let brassVolume = 0.15;
+        let percussionVolume = 0.2;
+        
+        if (phase1) {
+          // Building intro
+          intensity = Math.min(0.6, time / 8);
+          melodyVolume = intensity * 0.3;
+          bassVolume = intensity * 0.4;
+          brassVolume = intensity * 0.2;
+          percussionVolume = intensity * 0.25;
+        } else if (phase2) {
+          // First epic crescendo
+          intensity = 0.6 + ((time - 8) / 12) * 0.3;
+          melodyVolume = intensity * 0.4;
+          bassVolume = intensity * 0.5;
+          brassVolume = intensity * 0.35;
+          percussionVolume = intensity * 0.4;
+        } else if (phase3) {
+          // EPIC CLIMAX
+          intensity = 0.9 + Math.sin(time * 0.5) * 0.1;
+          melodyVolume = intensity * 0.5;
+          bassVolume = intensity * 0.6;
+          brassVolume = intensity * 0.5;
+          percussionVolume = intensity * 0.5;
+        } else if (phase4) {
+          // Grand finale
+          const fadeStart = time - 35;
+          intensity = Math.max(0.1, 1.0 - (fadeStart / 10));
+          melodyVolume = intensity * 0.6;
+          bassVolume = intensity * 0.7;
+          brassVolume = intensity * 0.6;
+          percussionVolume = intensity * 0.3;
+        }
+        
+        // Add tremolo for orchestral feel
+        const tremolo = 1 + Math.sin(2 * Math.PI * 6 * time) * 0.1;
+        
+        // Harmonic richness (add overtones)
+        const harmonics = (
+          Math.sin(2 * Math.PI * 146.83 * 2 * time) * 0.1 +
+          Math.sin(2 * Math.PI * 146.83 * 3 * time) * 0.05 +
+          Math.sin(2 * Math.PI * 146.83 * 4 * time) * 0.03
+        );
+        
+        // Combine all elements for EPIC Worlds-style music
+        const combined = (
+          heroicMelody * melodyVolume * tremolo +
+          orchestralStrings * melodyVolume * 0.8 +
+          epicBass * bassVolume +
+          heroicBrass * brassVolume * tremolo +
+          epicPercussion * percussionVolume +
+          magicalAtmosphere * intensity +
+          harmonics * intensity * 0.5
+        );
+        
+        // Stereo panning for orchestral width
+        const pan = channel === 0 ? 0.9 : 1.1;
+        
+        channelData[i] = combined * 0.35 * pan; // Master volume with stereo
       }
     }
     
