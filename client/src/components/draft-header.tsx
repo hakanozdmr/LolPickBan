@@ -8,11 +8,12 @@ interface DraftHeaderProps {
 }
 
 const PHASE_NAMES: Record<string, string> = {
-  ban1: "BAN PHASE 1",
-  pick1: "PICK PHASE 1", 
-  ban2: "BAN PHASE 2",
-  pick2: "PICK PHASE 2",
-  pick3: "PICK PHASE 3",
+  waiting: "DRAFT BAŞLAMADAN ÖNCE",
+  ban1: "BAN FAZΙ 1",
+  pick1: "SEÇİM FAZI 1", 
+  ban2: "BAN FAZI 2",
+  pick2: "SEÇİM FAZI 2",
+  completed: "DRAFT TAMAMLANDI",
 };
 
 export function DraftHeader({ draftSession, champions, timer }: DraftHeaderProps) {

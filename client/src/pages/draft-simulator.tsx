@@ -8,13 +8,13 @@ import { ChampionGrid } from "@/components/champion-grid";
 import { ActionBar } from "@/components/action-bar";
 import { useToast } from "@/hooks/use-toast";
 
-const DRAFT_PHASES = ['ban1', 'pick1', 'ban2', 'pick2', 'pick3'];
 const PHASE_DURATIONS = {
+  waiting: 0,
   ban1: 30,
   pick1: 30,
   ban2: 30,
   pick2: 30,
-  pick3: 30,
+  completed: 0,
 };
 
 export default function DraftSimulator() {
@@ -44,9 +44,10 @@ export default function DraftSimulator() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phase: 'ban1',
+          phase: 'waiting',
           currentTeam: 'blue',
           timer: '30',
+          phaseStep: '0',
           blueTeamPicks: [],
           redTeamPicks: [],
           blueTeamBans: [],
@@ -59,6 +60,59 @@ export default function DraftSimulator() {
     onSuccess: (data: DraftSession) => {
       setDraftSessionId(data.id);
       queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions'] });
+    },
+  });
+
+  // Start draft mutation
+  const startDraftMutation = useMutation({
+    mutationFn: async () => {
+      if (!draftSessionId) throw new Error('No draft session');
+      const response = await fetch(`/api/draft-sessions/${draftSessionId}/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error('Failed to start draft');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
+      toast({ title: "Draft Başladı!", description: "Ban fazı başlıyor..." });
+    },
+  });
+
+  // Ban champion mutation
+  const banChampionMutation = useMutation({
+    mutationFn: async (championId: string) => {
+      if (!draftSessionId) throw new Error('No draft session');
+      const response = await fetch(`/api/draft-sessions/${draftSessionId}/ban`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ championId }),
+      });
+      if (!response.ok) throw new Error('Failed to ban champion');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
+      setSelectedChampion(null);
+    },
+  });
+
+  // Pick champion mutation
+  const pickChampionMutation = useMutation({
+    mutationFn: async (championId: string) => {
+      if (!draftSessionId) throw new Error('No draft session');
+      const response = await fetch(`/api/draft-sessions/${draftSessionId}/pick`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ championId }),
+      });
+      if (!response.ok) throw new Error('Failed to pick champion');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
+      setSelectedChampion(null);
     },
   });
 
@@ -86,22 +140,15 @@ export default function DraftSimulator() {
     }
   }, []);
 
-  // Timer logic
+  // Timer logic - disabled for manual progression
   useEffect(() => {
-    if (!draftSession) return;
+    if (!draftSession || draftSession.phase === 'waiting' || draftSession.phase === 'completed') {
+      setTimer(0);
+      return;
+    }
 
-    const interval = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          // Auto-advance to next phase
-          advancePhase();
-          return PHASE_DURATIONS[draftSession.phase as keyof typeof PHASE_DURATIONS] || 30;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
+    const phaseDuration = PHASE_DURATIONS[draftSession.phase as keyof typeof PHASE_DURATIONS] || 30;
+    setTimer(phaseDuration);
   }, [draftSession?.phase]);
 
   // Filter champions
@@ -139,87 +186,33 @@ export default function DraftSimulator() {
     return [...draftSession.blueTeamPicks, ...draftSession.redTeamPicks];
   }, [draftSession]);
 
-  const advancePhase = () => {
-    if (!draftSession) return;
-
-    const currentPhaseIndex = DRAFT_PHASES.indexOf(draftSession.phase);
-    const nextPhaseIndex = (currentPhaseIndex + 1) % DRAFT_PHASES.length;
-    const nextPhase = DRAFT_PHASES[nextPhaseIndex];
-    const nextTeam = draftSession.currentTeam === 'blue' ? 'red' : 'blue';
-
-    updateDraftMutation.mutate({
-      phase: nextPhase,
-      currentTeam: nextTeam,
-    });
-
-    setTimer(PHASE_DURATIONS[nextPhase as keyof typeof PHASE_DURATIONS] || 30);
-    setSelectedChampion(null);
+  const handleStartDraft = () => {
+    if (!draftSessionId) return;
+    startDraftMutation.mutate();
   };
 
   const handlePickChampion = () => {
     if (!selectedChampion || !draftSession) return;
 
-    const isBlueTeam = draftSession.currentTeam === 'blue';
-    const currentPicks = isBlueTeam ? draftSession.blueTeamPicks : draftSession.redTeamPicks;
+    pickChampionMutation.mutate(selectedChampion.id);
     
-    if (currentPicks.length >= 5) {
-      toast({
-        title: "Team Full",
-        description: "This team already has 5 champions picked.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const updates = isBlueTeam
-      ? { blueTeamPicks: [...currentPicks, selectedChampion.id] }
-      : { redTeamPicks: [...currentPicks, selectedChampion.id] };
-
-    updateDraftMutation.mutate(updates);
-    
+    const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
     toast({
-      title: "Champion Picked",
-      description: `${selectedChampion.name} has been picked for ${isBlueTeam ? 'Blue' : 'Red'} team.`,
+      title: "Şampiyon Seçildi",
+      description: `${selectedChampion.name} ${teamName} takım için seçildi.`,
     });
-
-    advancePhase();
   };
 
   const handleBanChampion = () => {
     if (!selectedChampion || !draftSession) return;
 
-    const isBlueTeam = draftSession.currentTeam === 'blue';
-    const currentBans = isBlueTeam ? draftSession.blueTeamBans : draftSession.redTeamBans;
+    banChampionMutation.mutate(selectedChampion.id);
     
-    if (currentBans.length >= 3) {
-      toast({
-        title: "Ban Limit Reached",
-        description: "This team has already banned 3 champions.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const updates = isBlueTeam
-      ? { blueTeamBans: [...currentBans, selectedChampion.id] }
-      : { redTeamBans: [...currentBans, selectedChampion.id] };
-
-    updateDraftMutation.mutate(updates);
-    
+    const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
     toast({
-      title: "Champion Banned",
-      description: `${selectedChampion.name} has been banned by ${isBlueTeam ? 'Blue' : 'Red'} team.`,
+      title: "Şampiyon Banlandı",
+      description: `${selectedChampion.name} ${teamName} takım tarafından banlandı.`,
     });
-
-    advancePhase();
-  };
-
-  const handleSkipTurn = () => {
-    toast({
-      title: "Turn Skipped",
-      description: "Turn has been skipped.",
-    });
-    advancePhase();
   };
 
   const handleRoleToggle = (role: string) => {
@@ -289,7 +282,7 @@ export default function DraftSimulator() {
         selectedChampion={selectedChampion}
         onPickChampion={handlePickChampion}
         onBanChampion={handleBanChampion}
-        onSkipTurn={handleSkipTurn}
+        onStartDraft={handleStartDraft}
       />
       
       {/* Add bottom padding to prevent content from being hidden behind action bar */}

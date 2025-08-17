@@ -7,15 +7,16 @@ interface ActionBarProps {
   selectedChampion: Champion | null;
   onPickChampion: () => void;
   onBanChampion: () => void;
-  onSkipTurn: () => void;
+  onStartDraft: () => void;
 }
 
 const PHASE_ACTIONS: Record<string, string> = {
-  ban1: "Ban Champion",
-  pick1: "Pick Champion",
-  ban2: "Ban Champion", 
-  pick2: "Pick Champion",
-  pick3: "Pick Champion",
+  waiting: "Başlamayı Bekliyor",
+  ban1: "Şampiyon Banla",
+  pick1: "Şampiyon Seç",
+  ban2: "Şampiyon Banla", 
+  pick2: "Şampiyon Seç",
+  completed: "Draft Tamamlandı",
 };
 
 export function ActionBar({ 
@@ -23,27 +24,31 @@ export function ActionBar({
   selectedChampion, 
   onPickChampion, 
   onBanChampion, 
-  onSkipTurn 
+  onStartDraft 
 }: ActionBarProps) {
-  const currentAction = PHASE_ACTIONS[draftSession.phase] || "Select Action";
+  const currentAction = PHASE_ACTIONS[draftSession.phase] || "Eylem Seç";
   const isPick = draftSession.phase.includes('pick');
   const isBan = draftSession.phase.includes('ban');
+  const isWaiting = draftSession.phase === 'waiting';
+  const isCompleted = draftSession.phase === 'completed';
 
   return (
     <div className="fixed bottom-0 left-0 right-0 lol-bg-darker border-t border-gray-700 p-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="text-sm lol-text-gray">
-            Current Action: <span className="lol-text-accent font-semibold" data-testid="current-action">{currentAction}</span>
+            Mevcut Durum: <span className="lol-text-accent font-semibold" data-testid="current-action">{currentAction}</span>
           </div>
-          <div className="text-sm lol-text-gray">
-            Turn: <span className="text-white font-semibold" data-testid="current-team">
-              {draftSession.currentTeam === 'blue' ? 'Blue Team' : 'Red Team'}
-            </span>
-          </div>
+          {!isWaiting && !isCompleted && (
+            <div className="text-sm lol-text-gray">
+              Sıra: <span className="text-white font-semibold" data-testid="current-team">
+                {draftSession.currentTeam === 'blue' ? 'Mavi Takım' : 'Kırmızı Takım'}
+              </span>
+            </div>
+          )}
           {selectedChampion && (
             <div className="text-sm lol-text-gray">
-              Selected: <span className="lol-text-gold font-semibold" data-testid="selected-champion">
+              Seçili: <span className="lol-text-gold font-semibold" data-testid="selected-champion">
                 {selectedChampion.name}
               </span>
             </div>
@@ -51,17 +56,18 @@ export function ActionBar({
         </div>
         
         <div className="flex items-center gap-3">
-          <Button
-            onClick={onSkipTurn}
-            variant="secondary"
-            className="bg-gray-600 hover:bg-gray-500 text-white"
-            data-testid="skip-turn-button"
-          >
-            <SkipForward className="mr-2 h-4 w-4" />
-            Skip Turn
-          </Button>
+          {isWaiting && (
+            <Button
+              onClick={onStartDraft}
+              className="bg-lol-accent hover:bg-lol-accent/80 text-black font-semibold"
+              data-testid="start-draft-button"
+            >
+              <Check className="mr-2 h-4 w-4" />
+              Draft Başlat
+            </Button>
+          )}
           
-          {isBan && (
+          {isBan && !isCompleted && (
             <Button
               onClick={onBanChampion}
               disabled={!selectedChampion}
@@ -69,11 +75,11 @@ export function ActionBar({
               data-testid="ban-champion-button"
             >
               <Ban className="mr-2 h-4 w-4" />
-              Ban Champion
+              Şampiyon Banla
             </Button>
           )}
           
-          {isPick && (
+          {isPick && !isCompleted && (
             <Button
               onClick={onPickChampion}
               disabled={!selectedChampion}
@@ -81,7 +87,7 @@ export function ActionBar({
               data-testid="pick-champion-button"
             >
               <Check className="mr-2 h-4 w-4" />
-              Confirm Pick
+              Şampiyon Seç
             </Button>
           )}
         </div>

@@ -14,9 +14,10 @@ export const champions = pgTable("champions", {
 
 export const draftSessions = pgTable("draft_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  phase: text("phase").notNull().default("ban1"),
+  phase: text("phase").notNull().default("waiting"),
   currentTeam: text("current_team").notNull().default("blue"),
   timer: varchar("timer").notNull().default("30"),
+  phaseStep: varchar("phase_step").notNull().default("0"),
   blueTeamPicks: jsonb("blue_team_picks").$type<string[]>().notNull().default([]),
   redTeamPicks: jsonb("red_team_picks").$type<string[]>().notNull().default([]),
   blueTeamBans: jsonb("blue_team_bans").$type<string[]>().notNull().default([]),

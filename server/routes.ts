@@ -60,6 +60,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Start draft session
+  app.post("/api/draft-sessions/:id/start", async (req, res) => {
+    try {
+      const session = await storage.startDraft(req.params.id);
+      if (!session) {
+        res.status(404).json({ message: "Draft session not found" });
+        return;
+      }
+      res.json(session);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to start draft session" });
+    }
+  });
+
+  // Ban champion
+  app.post("/api/draft-sessions/:id/ban", async (req, res) => {
+    try {
+      const { championId } = req.body;
+      if (!championId) {
+        res.status(400).json({ message: "Champion ID is required" });
+        return;
+      }
+      const session = await storage.banChampion(req.params.id, championId);
+      if (!session) {
+        res.status(404).json({ message: "Draft session not found" });
+        return;
+      }
+      res.json(session);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to ban champion" });
+    }
+  });
+
+  // Pick champion
+  app.post("/api/draft-sessions/:id/pick", async (req, res) => {
+    try {
+      const { championId } = req.body;
+      if (!championId) {
+        res.status(400).json({ message: "Champion ID is required" });
+        return;
+      }
+      const session = await storage.pickChampion(req.params.id, championId);
+      if (!session) {
+        res.status(404).json({ message: "Draft session not found" });
+        return;
+      }
+      res.json(session);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to pick champion" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
