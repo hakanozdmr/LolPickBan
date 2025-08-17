@@ -56,16 +56,7 @@ export function ActionBar({
         </div>
         
         <div className="flex items-center gap-3">
-          {isWaiting && (
-            <Button
-              onClick={onOpenStartModal}
-              className="bg-lol-accent hover:bg-lol-accent/80 text-black font-semibold"
-              data-testid="open-start-modal-button"
-            >
-              <Check className="mr-2 h-4 w-4" />
-              Draft Başlat
-            </Button>
-          )}
+          
           
           {isBan && !isCompleted && (
             <Button
