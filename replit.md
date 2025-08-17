@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a League of Legends champion draft simulator built as a full-stack web application. The application simulates the draft phase experience from competitive League of Legends matches, allowing users to practice pick/ban strategies in a realistic environment. The simulator includes champion filtering, draft phase progression, team-based selections, and real-time state management for both picks and bans across blue and red teams.
+This is a League of Legends champion draft simulator built as a full-stack web application. The application simulates the draft phase experience from competitive League of Legends matches, allowing users to practice pick/ban strategies in a realistic environment. The simulator includes champion filtering, draft phase progression, team-based selections, real-time state management for both picks and bans across blue and red teams, and authentic League of Legends audio including epic draft music and champion pick/ban sound effects.
 
 ## User Preferences
 
@@ -34,7 +34,8 @@ The frontend is organized into several key component categories:
 - **Page Components**: Main route handlers like `DraftSimulator` and `NotFound`
 - **Feature Components**: Complex business logic components like `ChampionGrid`, `ActionBar`, `DraftHeader`, and `FiltersPanel`
 - **UI Components**: Reusable shadcn/ui components in the `/ui` directory
-- **Hooks**: Custom React hooks for mobile detection and toast notifications
+- **Hooks**: Custom React hooks for mobile detection, toast notifications, and audio management
+- **Audio System**: Professional-grade audio generator that creates authentic League of Legends draft music and sound effects
 
 ### State Management Strategy
 The application uses a hybrid state management approach:
@@ -78,3 +79,9 @@ The development setup includes Vite for fast HMR, TypeScript for type safety, an
 - **clsx/twMerge**: Conditional CSS class name utilities
 - **date-fns**: Date manipulation and formatting library
 - **nanoid**: URL-safe unique ID generation
+
+### Audio System
+- **Web Audio API**: Professional audio generation for authentic League of Legends experience
+- **Real-time Audio**: Epic orchestral draft music with heroic melodies and dynamic progression
+- **Sound Effects**: Authentic champion pick/ban sounds with metallic locks, dark tones, and magical hover effects
+- **Custom Audio Generator**: Procedurally generated sounds matching LoL's professional tournament atmosphere

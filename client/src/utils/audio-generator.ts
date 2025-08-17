@@ -10,11 +10,11 @@ export class AudioGenerator {
     return this.audioContext;
   }
 
-  // Create epic draft start music (similar to LoL champion select)
+  // Create authentic LoL draft music (champion select theme)
   static createDraftMusic(): AudioBuffer {
     const ctx = this.getAudioContext();
     const sampleRate = ctx.sampleRate;
-    const duration = 10; // 10 seconds loop
+    const duration = 15; // 15 seconds loop like LoL
     const buffer = ctx.createBuffer(2, sampleRate * duration, sampleRate);
 
     for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
@@ -23,89 +23,189 @@ export class AudioGenerator {
       for (let i = 0; i < channelData.length; i++) {
         const time = i / sampleRate;
         
-        // Epic orchestral-style draft music
-        const bass = Math.sin(2 * Math.PI * 55 * time) * 0.3; // Bass line (A1)
-        const harmony = Math.sin(2 * Math.PI * 110 * time) * 0.2; // Harmony (A2)
-        const melody = Math.sin(2 * Math.PI * 220 * time) * 0.15; // Main melody (A3)
-        const strings = Math.sin(2 * Math.PI * 330 * time) * 0.1; // String section
+        // LoL-style epic orchestral progression
+        // Main heroic melody line (similar to champion select theme)
+        const melody1 = Math.sin(2 * Math.PI * 146.83 * time) * 0.25; // D3
+        const melody2 = Math.sin(2 * Math.PI * 174.61 * time) * 0.2;  // F3
+        const melody3 = Math.sin(2 * Math.PI * 196.00 * time) * 0.22; // G3
+        const melody4 = Math.sin(2 * Math.PI * 220.00 * time) * 0.18; // A3
         
-        // Add some reverb-like effect with delay
-        const delay = Math.sin(2 * Math.PI * 220 * (time - 0.1)) * 0.05;
+        // Epic bass foundation
+        const bass = Math.sin(2 * Math.PI * 73.42 * time) * 0.35; // D2
+        const subBass = Math.sin(2 * Math.PI * 36.71 * time) * 0.2; // D1
         
-        // Combine all layers with epic feel
-        channelData[i] = (bass + harmony + melody + strings + delay) * 0.6;
+        // Orchestral strings harmony
+        const strings1 = Math.sin(2 * Math.PI * 293.66 * time) * 0.15; // D4
+        const strings2 = Math.sin(2 * Math.PI * 349.23 * time) * 0.12; // F4
+        const strings3 = Math.sin(2 * Math.PI * 392.00 * time) * 0.1;  // G4
+        
+        // Heroic brass section
+        const brass1 = Math.sin(2 * Math.PI * 146.83 * 2 * time) * 0.18; // D4
+        const brass2 = Math.sin(2 * Math.PI * 196.00 * 2 * time) * 0.15; // G4
+        
+        // Epic timpani-like percussion
+        const timpani = Math.sin(2 * Math.PI * 60 * time) * Math.exp(-((time % 2) * 8)) * 0.3;
+        
+        // Cinematic reverb and atmosphere
+        const atmosphere = Math.sin(2 * Math.PI * 440 * time) * 0.05 * Math.sin(2 * Math.PI * 0.1 * time);
+        
+        // Dynamic progression (builds up over time)
+        const progression = Math.min(1, time / 3); // Build up over 3 seconds
+        
+        // Combine all elements with LoL-style epic feel
+        const combined = (
+          (melody1 + melody2 + melody3 + melody4) * progression +
+          (bass + subBass) * 0.8 +
+          (strings1 + strings2 + strings3) * progression * 0.7 +
+          (brass1 + brass2) * progression * 0.6 +
+          timpani * 0.5 +
+          atmosphere
+        );
+        
+        channelData[i] = combined * 0.4; // Master volume
       }
     }
     
     return buffer;
   }
 
-  // Champion pick sound (deep, satisfying "lock-in" sound)
+  // Authentic LoL champion pick sound (metallic "lock-in" with confirmation tone)
   static createPickSound(): AudioBuffer {
     const ctx = this.getAudioContext();
     const sampleRate = ctx.sampleRate;
-    const duration = 0.8;
+    const duration = 1.2;
     const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
     const channelData = buffer.getChannelData(0);
 
     for (let i = 0; i < channelData.length; i++) {
       const time = i / sampleRate;
       
-      // Deep, satisfying pick sound
-      const base = Math.sin(2 * Math.PI * 80 * time); // Low frequency
-      const click = Math.sin(2 * Math.PI * 1200 * time) * Math.exp(-time * 15); // Click attack
-      const resonance = Math.sin(2 * Math.PI * 160 * time) * Math.exp(-time * 3); // Resonance
+      // LoL-style pick sound elements
+      // Initial "click" attack (0-0.1s) 
+      const metalClick = Math.sin(2 * Math.PI * 2400 * time) * Math.exp(-time * 50) * (time < 0.1 ? 1 : 0);
       
-      // Envelope for satisfying feel
-      const envelope = Math.exp(-time * 2);
+      // Lock mechanism sound (0.05-0.3s)
+      const lockMechanism = Math.sin(2 * Math.PI * 150 * time) * Math.exp(-(time - 0.05) * 8) * 
+                           (time > 0.05 && time < 0.3 ? 1 : 0);
       
-      channelData[i] = (base * 0.6 + click * 0.3 + resonance * 0.4) * envelope * 0.7;
+      // Confirmation tone (0.2-0.8s) - heroic and satisfying
+      const confirmTone1 = Math.sin(2 * Math.PI * 523.25 * time) * Math.exp(-(time - 0.2) * 3) * // C5
+                           (time > 0.2 && time < 0.8 ? 1 : 0);
+      const confirmTone2 = Math.sin(2 * Math.PI * 659.25 * time) * Math.exp(-(time - 0.25) * 3) * // E5
+                           (time > 0.25 && time < 0.85 ? 1 : 0);
+      
+      // Deep resonance for authority (0.1-1.0s)
+      const deepResonance = Math.sin(2 * Math.PI * 80 * time) * Math.exp(-(time - 0.1) * 2) *
+                           (time > 0.1 && time < 1.0 ? 1 : 0);
+      
+      // Subtle reverb tail
+      const reverb = (confirmTone1 + confirmTone2) * 0.3 * Math.exp(-(time - 0.4) * 1.5) *
+                     (time > 0.4 ? 1 : 0);
+      
+      // Combine all elements with LoL-style mixing
+      channelData[i] = (
+        metalClick * 0.4 +
+        lockMechanism * 0.3 +
+        confirmTone1 * 0.5 +
+        confirmTone2 * 0.4 +
+        deepResonance * 0.3 +
+        reverb
+      ) * 0.8;
     }
     
     return buffer;
   }
 
-  // Champion ban sound (harsh, decisive)
+  // Authentic LoL champion ban sound (definitive "slam" with dark tones)
   static createBanSound(): AudioBuffer {
     const ctx = this.getAudioContext();
     const sampleRate = ctx.sampleRate;
-    const duration = 0.6;
+    const duration = 1.0;
     const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
     const channelData = buffer.getChannelData(0);
 
     for (let i = 0; i < channelData.length; i++) {
       const time = i / sampleRate;
       
-      // Harsh, decisive ban sound
-      const strike = Math.sin(2 * Math.PI * 150 * time) * Math.exp(-time * 8); // Strike sound
-      const clash = Math.sin(2 * Math.PI * 300 * time) * Math.exp(-time * 12); // Metallic clash
-      const rumble = Math.sin(2 * Math.PI * 60 * time) * Math.exp(-time * 4); // Low rumble
+      // LoL-style ban sound elements
+      // Heavy "slam" attack (0-0.15s)
+      const slam = Math.sin(2 * Math.PI * 60 * time) * Math.exp(-time * 12) * (time < 0.15 ? 1 : 0);
       
-      // Add some noise for harshness
-      const noise = (Math.random() - 0.5) * 0.1 * Math.exp(-time * 10);
+      // Sharp metallic clash (0.05-0.2s)
+      const metalClash = Math.sin(2 * Math.PI * 1800 * time) * Math.exp(-time * 25) *
+                         (time > 0.05 && time < 0.2 ? 1 : 0);
       
-      channelData[i] = (strike * 0.5 + clash * 0.3 + rumble * 0.4 + noise) * 0.8;
+      // Dark ominous tone (0.1-0.6s) - minor chord for finality
+      const darkTone1 = Math.sin(2 * Math.PI * 138.59 * time) * Math.exp(-(time - 0.1) * 4) * // C#3
+                         (time > 0.1 && time < 0.6 ? 1 : 0);
+      const darkTone2 = Math.sin(2 * Math.PI * 164.81 * time) * Math.exp(-(time - 0.15) * 4) * // E3
+                         (time > 0.15 && time < 0.65 ? 1 : 0);
+      const darkTone3 = Math.sin(2 * Math.PI * 196.00 * time) * Math.exp(-(time - 0.2) * 4) * // G3
+                         (time > 0.2 && time < 0.7 ? 1 : 0);
+      
+      // Deep rumbling bass (0-0.8s)
+      const rumble = Math.sin(2 * Math.PI * 35 * time) * Math.exp(-time * 2) * (time < 0.8 ? 1 : 0);
+      
+      // Harsh noise burst for impact (0-0.1s)
+      const noiseComponent = (Math.random() - 0.5) * 0.2 * Math.exp(-time * 30) * (time < 0.1 ? 1 : 0);
+      
+      // Forboding echo/reverb
+      const echo = (darkTone1 + darkTone2 + darkTone3) * 0.25 * Math.exp(-(time - 0.3) * 2) *
+                   (time > 0.3 ? 1 : 0);
+      
+      // Combine all elements with LoL-style authority
+      channelData[i] = (
+        slam * 0.6 +
+        metalClash * 0.4 +
+        darkTone1 * 0.3 +
+        darkTone2 * 0.25 +
+        darkTone3 * 0.2 +
+        rumble * 0.4 +
+        noiseComponent +
+        echo
+      ) * 0.9;
     }
     
     return buffer;
   }
 
-  // Champion hover sound (subtle preview)
+  // Authentic LoL champion hover sound (subtle magical preview)
   static createHoverSound(): AudioBuffer {
     const ctx = this.getAudioContext();
     const sampleRate = ctx.sampleRate;
-    const duration = 0.3;
+    const duration = 0.4;
     const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
     const channelData = buffer.getChannelData(0);
 
     for (let i = 0; i < channelData.length; i++) {
       const time = i / sampleRate;
       
-      // Subtle hover sound
-      const tone = Math.sin(2 * Math.PI * 400 * time); // Pleasant tone
-      const envelope = Math.exp(-time * 8) * (1 - Math.exp(-time * 30)); // Quick attack, fast decay
+      // LoL-style magical hover sound
+      // Soft magical chime (0-0.3s)
+      const chime1 = Math.sin(2 * Math.PI * 880 * time) * Math.exp(-time * 8) * (time < 0.3 ? 1 : 0); // A5
+      const chime2 = Math.sin(2 * Math.PI * 1108.7 * time) * Math.exp(-(time - 0.05) * 8) * // C#6
+                     (time > 0.05 && time < 0.35 ? 1 : 0);
       
-      channelData[i] = tone * envelope * 0.3;
+      // Gentle magical sparkle overlay
+      const sparkle = Math.sin(2 * Math.PI * 1760 * time) * Math.exp(-time * 15) * 0.3 * (time < 0.2 ? 1 : 0);
+      
+      // Soft magical resonance
+      const resonance = Math.sin(2 * Math.PI * 440 * time) * Math.exp(-time * 5) * 0.4;
+      
+      // Very subtle mystical undertone
+      const mystical = Math.sin(2 * Math.PI * 220 * time) * Math.exp(-time * 6) * 0.2;
+      
+      // Quick attack and gentle decay for smoothness
+      const envelope = (1 - Math.exp(-time * 50)) * Math.exp(-time * 7);
+      
+      // Combine all elements for LoL-style magical hover
+      channelData[i] = (
+        chime1 * 0.6 +
+        chime2 * 0.5 +
+        sparkle +
+        resonance +
+        mystical
+      ) * envelope * 0.35;
     }
     
     return buffer;
