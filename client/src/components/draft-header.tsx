@@ -60,12 +60,12 @@ export function DraftHeader({ draftSession, champions, timer }: DraftHeaderProps
   };
 
   const renderBanSlots = (bans: string[], team: 'blue' | 'red') => {
-    const slots = Array.from({ length: 3 }, (_, i) => {
+    const slots = Array.from({ length: 5 }, (_, i) => {
       const champion = bans[i] ? getChampionById(bans[i]) : null;
       return (
         <div
           key={i}
-          className={`w-12 h-12 rounded border flex items-center justify-center relative overflow-hidden ${
+          className={`w-10 h-10 rounded border flex items-center justify-center relative overflow-hidden ${
             champion 
               ? 'bg-red-800/50 border-red-500' 
               : 'bg-gray-800 border-gray-600'
@@ -80,7 +80,7 @@ export function DraftHeader({ draftSession, champions, timer }: DraftHeaderProps
                 className="w-full h-full object-cover grayscale"
               />
               <div className="absolute inset-0 bg-red-500/20"></div>
-              <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-500 text-lg">⚠</span>
+              <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-500 text-lg font-bold">✕</span>
             </>
           ) : (
             <span className="text-gray-500 text-xs">🚫</span>
@@ -121,13 +121,13 @@ export function DraftHeader({ draftSession, champions, timer }: DraftHeaderProps
           <div className="flex-1">
             <div className="text-center mb-3">
               <h2 className="text-lg font-semibold lol-text-blue" data-testid="blue-team-title">
-                BLUE TEAM
+                MAVİ TAKIM
               </h2>
             </div>
             {renderPickSlots(draftSession.blueTeamPicks, 'blue')}
             
             <div className="mt-4">
-              <h3 className="text-sm font-medium lol-text-gray mb-2">BANS</h3>
+              <h3 className="text-sm font-medium lol-text-gray mb-2">BANLAR</h3>
               {renderBanSlots(draftSession.blueTeamBans, 'blue')}
             </div>
           </div>
@@ -141,13 +141,13 @@ export function DraftHeader({ draftSession, champions, timer }: DraftHeaderProps
           <div className="flex-1">
             <div className="text-center mb-3">
               <h2 className="text-lg font-semibold lol-text-red" data-testid="red-team-title">
-                RED TEAM
+                KIRMIZI TAKIM
               </h2>
             </div>
             {renderPickSlots(draftSession.redTeamPicks, 'red')}
             
             <div className="mt-4">
-              <h3 className="text-sm font-medium lol-text-gray mb-2">BANS</h3>
+              <h3 className="text-sm font-medium lol-text-gray mb-2">BANLAR</h3>
               {renderBanSlots(draftSession.redTeamBans, 'red')}
             </div>
           </div>

@@ -44,7 +44,14 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const newSession: DraftSession = {
       id,
-      ...session,
+      phase: session.phase || "waiting",
+      currentTeam: session.currentTeam || "blue",
+      timer: session.timer || "30",
+      phaseStep: session.phaseStep || "0",
+      blueTeamPicks: session.blueTeamPicks || [],
+      redTeamPicks: session.redTeamPicks || [],
+      blueTeamBans: session.blueTeamBans || [],
+      redTeamBans: session.redTeamBans || [],
     };
     this.draftSessions.set(id, newSession);
     return newSession;
@@ -90,19 +97,23 @@ export class MemStorage implements IStorage {
 
     // Progress through ban phases
     if (updatedSession.phase === "ban1") {
-      const nextStep = this.getNextBanPhase1(step, updatedSession);
-      updatedSession.currentTeam = nextStep.team;
-      updatedSession.phaseStep = nextStep.step.toString();
-      if (nextStep.completed) {
+      if (step < 5) { // 0-5 = 6 bans total
+        const nextStep = this.getNextBanPhase1(step, updatedSession);
+        updatedSession.currentTeam = nextStep.team;
+        updatedSession.phaseStep = nextStep.step.toString();
+      } else {
+        // Move to pick1 phase
         updatedSession.phase = "pick1";
         updatedSession.phaseStep = "0";
         updatedSession.currentTeam = "blue";
       }
     } else if (updatedSession.phase === "ban2") {
-      const nextStep = this.getNextBanPhase2(step, updatedSession);
-      updatedSession.currentTeam = nextStep.team;
-      updatedSession.phaseStep = nextStep.step.toString();
-      if (nextStep.completed) {
+      if (step < 3) { // 0-3 = 4 bans total
+        const nextStep = this.getNextBanPhase2(step, updatedSession);
+        updatedSession.currentTeam = nextStep.team;
+        updatedSession.phaseStep = nextStep.step.toString();
+      } else {
+        // Move to pick2 phase
         updatedSession.phase = "pick2";
         updatedSession.phaseStep = "0";
         updatedSession.currentTeam = "red";
@@ -129,19 +140,23 @@ export class MemStorage implements IStorage {
 
     // Progress through pick phases
     if (updatedSession.phase === "pick1") {
-      const nextStep = this.getNextPickPhase1(step, updatedSession);
-      updatedSession.currentTeam = nextStep.team;
-      updatedSession.phaseStep = nextStep.step.toString();
-      if (nextStep.completed) {
+      if (step < 3) { // 0-3 = 4 picks total
+        const nextStep = this.getNextPickPhase1(step, updatedSession);
+        updatedSession.currentTeam = nextStep.team;
+        updatedSession.phaseStep = nextStep.step.toString();
+      } else {
+        // Move to ban2 phase
         updatedSession.phase = "ban2";
         updatedSession.phaseStep = "0";
-        updatedSession.currentTeam = "blue";
+        updatedSession.currentTeam = "red";
       }
     } else if (updatedSession.phase === "pick2") {
-      const nextStep = this.getNextPickPhase2(step, updatedSession);
-      updatedSession.currentTeam = nextStep.team;
-      updatedSession.phaseStep = nextStep.step.toString();
-      if (nextStep.completed) {
+      if (step < 3) { // 0-3 = 4 picks total
+        const nextStep = this.getNextPickPhase2(step, updatedSession);
+        updatedSession.currentTeam = nextStep.team;
+        updatedSession.phaseStep = nextStep.step.toString();
+      } else {
+        // Draft completed
         updatedSession.phase = "completed";
       }
     }
@@ -155,10 +170,14 @@ export class MemStorage implements IStorage {
     const sequence = ["blue", "red", "blue", "red", "blue", "red"];
     const nextStep = step + 1;
     
+    if (nextStep >= sequence.length) {
+      return { team: "blue" as "blue" | "red", step: nextStep, completed: true };
+    }
+    
     return {
       team: sequence[nextStep] as "blue" | "red",
       step: nextStep,
-      completed: nextStep >= 6
+      completed: false
     };
   }
 
@@ -167,22 +186,30 @@ export class MemStorage implements IStorage {
     const sequence = ["blue", "red", "red", "blue"];
     const nextStep = step + 1;
     
-    return {
-      team: sequence[nextStep] as "blue" | "red",
-      step: nextStep,
-      completed: nextStep >= 4
-    };
-  }
-
-  private getNextBanPhase2(step: number, session: DraftSession) {
-    // Ban Phase 2: Blue-Red-Blue-Red (4 bans total, 2 each)
-    const sequence = ["blue", "red", "blue", "red"];
-    const nextStep = step + 1;
+    if (nextStep >= sequence.length) {
+      return { team: "blue" as "blue" | "red", step: nextStep, completed: true };
+    }
     
     return {
       team: sequence[nextStep] as "blue" | "red",
       step: nextStep,
-      completed: nextStep >= 4
+      completed: false
+    };
+  }
+
+  private getNextBanPhase2(step: number, session: DraftSession) {
+    // Ban Phase 2: Red-Blue-Red-Blue (4 bans total, 2 each) 
+    const sequence = ["red", "blue", "red", "blue"];
+    const nextStep = step + 1;
+    
+    if (nextStep >= sequence.length) {
+      return { team: "red" as "blue" | "red", step: nextStep, completed: true };
+    }
+    
+    return {
+      team: sequence[nextStep] as "blue" | "red",
+      step: nextStep,
+      completed: false
     };
   }
 
@@ -191,10 +218,14 @@ export class MemStorage implements IStorage {
     const sequence = ["red", "blue", "blue", "red"];
     const nextStep = step + 1;
     
+    if (nextStep >= sequence.length) {
+      return { team: "red" as "blue" | "red", step: nextStep, completed: true };
+    }
+    
     return {
       team: sequence[nextStep] as "blue" | "red",
       step: nextStep,
-      completed: nextStep >= 4
+      completed: false
     };
   }
 }
