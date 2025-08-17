@@ -140,7 +140,7 @@ export class MemStorage implements IStorage {
 
     // Progress through pick phases
     if (updatedSession.phase === "pick1") {
-      if (step < 3) { // 0-3 = 4 picks total
+      if (step < 5) { // 0-5 = 6 picks total
         const nextStep = this.getNextPickPhase1(step, updatedSession);
         updatedSession.currentTeam = nextStep.team;
         updatedSession.phaseStep = nextStep.step.toString();
@@ -182,8 +182,8 @@ export class MemStorage implements IStorage {
   }
 
   private getNextPickPhase1(step: number, session: DraftSession) {
-    // Pick Phase 1: Blue-Red-Red-Blue (4 picks total)
-    const sequence = ["blue", "red", "red", "blue"];
+    // Pick Phase 1: Blue-Red-Red-Blue-Blue-Red (6 picks total)
+    const sequence = ["blue", "red", "red", "blue", "blue", "red"];
     const nextStep = step + 1;
     
     if (nextStep >= sequence.length) {
