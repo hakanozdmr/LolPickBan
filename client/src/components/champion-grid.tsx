@@ -7,6 +7,7 @@ interface ChampionGridProps {
   onChampionSelect: (champion: Champion) => void;
   bannedChampions: string[];
   pickedChampions: string[];
+  onChampionHover?: () => void;
 }
 
 export function ChampionGrid({ 
@@ -14,7 +15,8 @@ export function ChampionGrid({
   selectedChampion, 
   onChampionSelect,
   bannedChampions,
-  pickedChampions 
+  pickedChampions,
+  onChampionHover 
 }: ChampionGridProps) {
   const getChampionStatus = (champion: Champion) => {
     if (bannedChampions.includes(champion.id)) return 'banned';
@@ -57,6 +59,7 @@ export function ChampionGrid({
               <TooltipTrigger asChild>
                 <div
                   onClick={() => canSelect && onChampionSelect(champion)}
+                  onMouseEnter={() => canSelect && onChampionHover?.()}
                   className={`
                     group relative lol-bg-darker rounded-lg overflow-hidden border-2 
                     transition-all duration-200 ${getStatusClasses(status)}

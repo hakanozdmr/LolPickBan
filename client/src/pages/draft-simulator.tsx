@@ -7,6 +7,7 @@ import { FiltersPanel } from "@/components/filters-panel";
 import { ChampionGrid } from "@/components/champion-grid";
 import { ActionBar } from "@/components/action-bar";
 import { useToast } from "@/hooks/use-toast";
+import { useAudio } from "@/hooks/use-audio";
 
 const PHASE_DURATIONS = {
   waiting: 0,
@@ -19,6 +20,7 @@ const PHASE_DURATIONS = {
 
 export default function DraftSimulator() {
   const { toast } = useToast();
+  const { playDraftMusic, playPickSound, playBanSound, playHoverSound, stopAllSounds } = useAudio();
   const [selectedChampion, setSelectedChampion] = useState<Champion | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -77,6 +79,8 @@ export default function DraftSimulator() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
       toast({ title: "Draft Başladı!", description: "Ban fazı başlıyor..." });
+      // Play epic draft music when starting
+      playDraftMusic();
     },
   });
 
@@ -95,6 +99,8 @@ export default function DraftSimulator() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
       setSelectedChampion(null);
+      // Play ban sound effect
+      playBanSound();
     },
   });
 
@@ -113,6 +119,8 @@ export default function DraftSimulator() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
       setSelectedChampion(null);
+      // Play pick sound effect
+      playPickSound();
     },
   });
 
@@ -273,6 +281,7 @@ export default function DraftSimulator() {
             onChampionSelect={setSelectedChampion}
             bannedChampions={bannedChampions}
             pickedChampions={pickedChampions}
+            onChampionHover={playHoverSound}
           />
         </div>
       </div>
