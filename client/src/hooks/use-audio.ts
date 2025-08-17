@@ -1,19 +1,21 @@
 import { useRef, useCallback } from 'react';
 import { AudioGenerator, GENERATED_SOUNDS } from '../utils/audio-generator';
 
-export function useAudio() {
+export function useAudio(globalVolume: number = 50) {
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
   const draftMusicSource = useRef<AudioBufferSourceNode | null>(null);
   const youtubeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const volumeMultiplier = globalVolume / 100;
 
   const playGeneratedSound = useCallback((buffer: AudioBuffer | null, volume: number = 0.5) => {
     if (!buffer) return;
     try {
-      AudioGenerator.playBuffer(buffer, volume);
+      const adjustedVolume = volume * volumeMultiplier;
+      AudioGenerator.playBuffer(buffer, adjustedVolume);
     } catch (error) {
       console.warn('Could not play generated sound:', error);
     }
-  }, []);
+  }, [volumeMultiplier]);
 
   const playSound = useCallback((soundName: string, volume: number = 0.5) => {
     try {

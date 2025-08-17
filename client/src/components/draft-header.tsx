@@ -1,10 +1,12 @@
 import { DraftSession, Champion } from "@shared/schema";
 import { Gamepad2 } from "lucide-react";
+import { AudioControl } from "./audio-control";
 
 interface DraftHeaderProps {
   draftSession: DraftSession;
   champions: Champion[];
   timer: number;
+  onVolumeChange?: (volume: number) => void;
 }
 
 const PHASE_NAMES: Record<string, string> = {
@@ -16,7 +18,7 @@ const PHASE_NAMES: Record<string, string> = {
   completed: "DRAFT TAMAMLANDI",
 };
 
-export function DraftHeader({ draftSession, champions, timer }: DraftHeaderProps) {
+export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: DraftHeaderProps) {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -101,6 +103,7 @@ export function DraftHeader({ draftSession, champions, timer }: DraftHeaderProps
             <h1 className="text-xl font-bold lol-text-gold" data-testid="draft-title">
               Draft Simulator
             </h1>
+            <AudioControl onVolumeChange={onVolumeChange} />
           </div>
           <div className="text-center">
             <div className="lol-text-accent text-lg font-semibold" data-testid="draft-phase">

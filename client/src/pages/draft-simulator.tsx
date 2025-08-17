@@ -21,7 +21,8 @@ const PHASE_DURATIONS = {
 
 export default function DraftSimulator() {
   const { toast } = useToast();
-  const { playDraftMusic, playPickSound, playBanSound, playHoverSound, stopAllSounds } = useAudio();
+  const [globalVolume, setGlobalVolume] = useState(50);
+  const { playDraftMusic, playPickSound, playBanSound, playHoverSound, stopAllSounds } = useAudio(globalVolume);
   const [selectedChampion, setSelectedChampion] = useState<Champion | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -267,6 +268,7 @@ export default function DraftSimulator() {
         draftSession={draftSession} 
         champions={champions}
         timer={timer}
+        onVolumeChange={setGlobalVolume}
       />
       
       <div className="max-w-7xl mx-auto px-6 py-6">
