@@ -1,21 +1,48 @@
-import { type Champion, type DraftSession, type InsertDraftSession } from "@shared/schema";
+import { type Champion, type DraftSession, type InsertDraftSession, type Tournament, type Team, type Match, type InsertTournament, type InsertTeam, type InsertMatch } from "@shared/schema";
 import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 
 export interface IStorage {
+  // Champions
   getChampions(): Promise<Champion[]>;
+  
+  // Draft Sessions
   getDraftSession(id: string): Promise<DraftSession | undefined>;
   createDraftSession(session: InsertDraftSession): Promise<DraftSession>;
   updateDraftSession(id: string, updates: Partial<DraftSession>): Promise<DraftSession | undefined>;
   startDraft(id: string): Promise<DraftSession | undefined>;
   banChampion(id: string, championId: string): Promise<DraftSession | undefined>;
   pickChampion(id: string, championId: string): Promise<DraftSession | undefined>;
+  
+  // Tournaments
+  getTournaments(): Promise<Tournament[]>;
+  getTournament(id: string): Promise<Tournament | undefined>;
+  createTournament(tournament: InsertTournament): Promise<Tournament>;
+  updateTournament(id: string, updates: Partial<Tournament>): Promise<Tournament | undefined>;
+  deleteTournament(id: string): Promise<boolean>;
+  
+  // Teams
+  getTeams(tournamentId: string): Promise<Team[]>;
+  getTeam(id: string): Promise<Team | undefined>;
+  createTeam(team: InsertTeam): Promise<Team>;
+  updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined>;
+  deleteTeam(id: string): Promise<boolean>;
+  
+  // Matches
+  getMatches(tournamentId: string): Promise<Match[]>;
+  getMatch(id: string): Promise<Match | undefined>;
+  createMatch(match: InsertMatch): Promise<Match>;
+  updateMatch(id: string, updates: Partial<Match>): Promise<Match | undefined>;
+  deleteMatch(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private champions: Champion[] = [];
   private draftSessions: Map<string, DraftSession> = new Map();
+  private tournaments: Map<string, Tournament> = new Map();
+  private teams: Map<string, Team> = new Map();
+  private matches: Map<string, Match> = new Map();
 
   constructor() {
     this.loadChampions();
@@ -48,10 +75,12 @@ export class MemStorage implements IStorage {
       currentTeam: session.currentTeam || "blue",
       timer: session.timer || "30",
       phaseStep: session.phaseStep || "0",
-      blueTeamPicks: session.blueTeamPicks || [],
-      redTeamPicks: session.redTeamPicks || [],
-      blueTeamBans: session.blueTeamBans || [],
-      redTeamBans: session.redTeamBans || [],
+      blueTeamPicks: Array.isArray(session.blueTeamPicks) ? session.blueTeamPicks : [],
+      redTeamPicks: Array.isArray(session.redTeamPicks) ? session.redTeamPicks : [],
+      blueTeamBans: Array.isArray(session.blueTeamBans) ? session.blueTeamBans : [],
+      redTeamBans: Array.isArray(session.redTeamBans) ? session.redTeamBans : [],
+      tournamentId: session.tournamentId || null,
+      matchId: session.matchId || null,
     };
     this.draftSessions.set(id, newSession);
     return newSession;
@@ -227,6 +256,125 @@ export class MemStorage implements IStorage {
       step: nextStep,
       completed: false
     };
+  }
+
+  // Tournament methods
+  async getTournaments(): Promise<Tournament[]> {
+    return Array.from(this.tournaments.values());
+  }
+
+  async getTournament(id: string): Promise<Tournament | undefined> {
+    return this.tournaments.get(id);
+  }
+
+  async createTournament(tournament: InsertTournament): Promise<Tournament> {
+    const id = randomUUID();
+    const now = new Date();
+    const newTournament: Tournament = {
+      id,
+      name: tournament.name,
+      description: tournament.description || null,
+      format: tournament.format || "single_elimination",
+      maxTeams: tournament.maxTeams || 8,
+      status: tournament.status || "setup",
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.tournaments.set(id, newTournament);
+    return newTournament;
+  }
+
+  async updateTournament(id: string, updates: Partial<Tournament>): Promise<Tournament | undefined> {
+    const tournament = this.tournaments.get(id);
+    if (!tournament) return undefined;
+
+    const updatedTournament = { 
+      ...tournament, 
+      ...updates, 
+      updatedAt: new Date() 
+    };
+    this.tournaments.set(id, updatedTournament);
+    return updatedTournament;
+  }
+
+  async deleteTournament(id: string): Promise<boolean> {
+    return this.tournaments.delete(id);
+  }
+
+  // Team methods
+  async getTeams(tournamentId: string): Promise<Team[]> {
+    return Array.from(this.teams.values()).filter(team => team.tournamentId === tournamentId);
+  }
+
+  async getTeam(id: string): Promise<Team | undefined> {
+    return this.teams.get(id);
+  }
+
+  async createTeam(team: InsertTeam): Promise<Team> {
+    const id = randomUUID();
+    const newTeam: Team = {
+      id,
+      name: team.name,
+      logo: team.logo || null,
+      tournamentId: team.tournamentId,
+      createdAt: new Date(),
+    };
+    this.teams.set(id, newTeam);
+    return newTeam;
+  }
+
+  async updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined> {
+    const team = this.teams.get(id);
+    if (!team) return undefined;
+
+    const updatedTeam = { ...team, ...updates };
+    this.teams.set(id, updatedTeam);
+    return updatedTeam;
+  }
+
+  async deleteTeam(id: string): Promise<boolean> {
+    return this.teams.delete(id);
+  }
+
+  // Match methods
+  async getMatches(tournamentId: string): Promise<Match[]> {
+    return Array.from(this.matches.values()).filter(match => match.tournamentId === tournamentId);
+  }
+
+  async getMatch(id: string): Promise<Match | undefined> {
+    return this.matches.get(id);
+  }
+
+  async createMatch(match: InsertMatch): Promise<Match> {
+    const id = randomUUID();
+    const newMatch: Match = {
+      id,
+      tournamentId: match.tournamentId,
+      team1Id: match.team1Id || null,
+      team2Id: match.team2Id || null,
+      winnerId: match.winnerId || null,
+      round: match.round,
+      position: match.position,
+      status: match.status || "pending",
+      scheduledAt: match.scheduledAt || null,
+      completedAt: match.completedAt || null,
+      createdAt: new Date(),
+    };
+    this.matches.set(id, newMatch);
+    return newMatch;
+  }
+
+  async updateMatch(id: string, updates: Partial<Match>): Promise<Match | undefined> {
+    const match = this.matches.get(id);
+    if (!match) return undefined;
+
+    const updatedMatch = { ...match, ...updates };
+    this.matches.set(id, updatedMatch);
+    return updatedMatch;
+  }
+
+  async deleteMatch(id: string): Promise<boolean> {
+    return this.matches.delete(id);
   }
 }
 

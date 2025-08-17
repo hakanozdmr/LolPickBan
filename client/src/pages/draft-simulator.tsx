@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Champion, DraftSession } from "@shared/schema";
+import { NavigationHeader } from "@/components/navigation-header";
 import { DraftHeader } from "@/components/draft-header";
 import { FiltersPanel } from "@/components/filters-panel";
 import { ChampionGrid } from "@/components/champion-grid";
@@ -265,6 +266,7 @@ export default function DraftSimulator() {
 
   return (
     <div className="min-h-screen lol-bg-dark text-white font-inter">
+      <NavigationHeader />
       <DraftHeader 
         draftSession={draftSession} 
         champions={champions}
