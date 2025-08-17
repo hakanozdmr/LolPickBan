@@ -16,20 +16,20 @@ interface FiltersPanelProps {
 }
 
 const ROLES = [
-  { id: 'Top', name: 'Top Lane', icon: Map },
-  { id: 'Jungle', name: 'Jungle', icon: TreePine },
-  { id: 'Mid', name: 'Mid Lane', icon: Star },
-  { id: 'ADC', name: 'ADC', icon: Crosshair },
-  { id: 'Support', name: 'Support', icon: Shield },
+  { id: 'Top', name: 'Üst Koridor', icon: Map },
+  { id: 'Jungle', name: 'Orman', icon: TreePine },
+  { id: 'Mid', name: 'Orta Koridor', icon: Star },
+  { id: 'ADC', name: 'Alt Koridor', icon: Crosshair },
+  { id: 'Support', name: 'Destek', icon: Shield },
 ];
 
 const CLASSES = [
-  { id: 'Assassin', name: 'Assassin', icon: UserX },
-  { id: 'Mage', name: 'Mage', icon: Wand2 },
+  { id: 'Assassin', name: 'Suikastçı', icon: UserX },
+  { id: 'Mage', name: 'Büyücü', icon: Wand2 },
   { id: 'Tank', name: 'Tank', icon: ShieldCheck },
-  { id: 'Fighter', name: 'Fighter', icon: Sword },
-  { id: 'Marksman', name: 'Marksman', icon: Zap },
-  { id: 'Support', name: 'Support', icon: Heart },
+  { id: 'Fighter', name: 'Savaşçı', icon: Sword },
+  { id: 'Marksman', name: 'Nişancı', icon: Zap },
+  { id: 'Support', name: 'Destek', icon: Heart },
 ];
 
 export function FiltersPanel({
@@ -46,18 +46,18 @@ export function FiltersPanel({
   return (
     <div className="w-80 lol-bg-darker rounded-lg p-6">
       <h3 className="text-lg font-semibold mb-4 lol-text-gold" data-testid="filters-title">
-        Filters
+        Filtreler
       </h3>
       
       {/* Search */}
       <div className="mb-6">
         <label className="block text-sm font-medium lol-text-gray mb-2">
-          Search Champions
+          Şampiyon Ara
         </label>
         <div className="relative">
           <Input
             type="text"
-            placeholder="Champion name..."
+            placeholder="Şampiyon ismi..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="lol-bg-dark border-gray-600 pl-10 text-white placeholder-gray-400 focus:border-lol-accent"
@@ -70,7 +70,7 @@ export function FiltersPanel({
       {/* Lane Filters */}
       <div className="mb-6">
         <label className="block text-sm font-medium lol-text-gray mb-3">
-          Lane / Role
+          Koridor / Rol
         </label>
         <div className="space-y-2">
           {ROLES.map((role) => {
@@ -100,7 +100,7 @@ export function FiltersPanel({
       {/* Class Filters */}
       <div className="mb-6">
         <label className="block text-sm font-medium lol-text-gray mb-3">
-          Champion Class
+          Şampiyon Sınıfı
         </label>
         <div className="space-y-2">
           {CLASSES.map((champClass) => {
@@ -134,12 +134,12 @@ export function FiltersPanel({
         className="w-full bg-gray-700 hover:bg-gray-600 text-white"
         data-testid="clear-filters-button"
       >
-        Clear All Filters
+        Tüm Filtreleri Temizle
       </Button>
 
       {/* Results Count */}
       <div className="mt-4 text-center text-sm lol-text-gray">
-        Showing {filteredChampions.length} of {champions.length} champions
+        {champions.length} şampiyondan {filteredChampions.length} tanesi gösteriliyor
       </div>
     </div>
   );

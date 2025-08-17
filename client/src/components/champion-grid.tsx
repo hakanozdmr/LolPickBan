@@ -1,4 +1,5 @@
 import { Champion } from "@shared/schema";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChampionGridProps {
   champions: Champion[];
@@ -39,10 +40,10 @@ export function ChampionGrid({
     <div className="flex-1">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-white" data-testid="champion-grid-title">
-          Champion Select
+          Şampiyon Seçimi
         </h2>
         <div className="text-sm lol-text-gray" data-testid="champions-count">
-          {champions.length} champions
+          {champions.length} şampiyon
         </div>
       </div>
 
@@ -52,59 +53,85 @@ export function ChampionGrid({
           const canSelect = status === 'available' || status === 'selected';
           
           return (
-            <div
-              key={champion.id}
-              onClick={() => canSelect && onChampionSelect(champion)}
-              className={`
-                group relative lol-bg-darker rounded-lg overflow-hidden border-2 
-                transition-all duration-200 ${getStatusClasses(status)}
-              `}
-              data-testid={`champion-card-${champion.id}`}
-            >
-              <div className="aspect-square relative overflow-hidden">
-                <img 
-                  src={champion.image} 
-                  alt={champion.name}
-                  className={`w-full h-full object-cover transition-transform duration-300 ${
-                    canSelect ? 'group-hover:scale-110' : ''
-                  }`}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                
-                {/* Ban overlay */}
-                {status === 'banned' && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-red-500 text-3xl">🚫</span>
+            <Tooltip key={champion.id}>
+              <TooltipTrigger asChild>
+                <div
+                  onClick={() => canSelect && onChampionSelect(champion)}
+                  className={`
+                    group relative lol-bg-darker rounded-lg overflow-hidden border-2 
+                    transition-all duration-200 ${getStatusClasses(status)}
+                  `}
+                  data-testid={`champion-card-${champion.id}`}
+                >
+                  <div className="aspect-square relative overflow-hidden">
+                    <img 
+                      src={champion.image} 
+                      alt={champion.name}
+                      className={`w-full h-full object-cover transition-transform duration-300 ${
+                        canSelect ? 'group-hover:scale-110' : ''
+                      }`}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
+                    
+                    {/* Ban overlay */}
+                    {status === 'banned' && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-red-500 text-3xl">🚫</span>
+                      </div>
+                    )}
                   </div>
-                )}
-                
-                <div className="absolute bottom-0 left-0 right-0 p-2">
-                  <div className="text-xs font-medium text-white truncate" data-testid={`champion-name-${champion.id}`}>
-                    {champion.name}
-                  </div>
-                  <div className="flex gap-1 mt-1 flex-wrap">
-                    {champion.roles.map((role) => (
-                      <span 
-                        key={role}
-                        className="text-xs px-1 py-0.5 bg-lol-blue/80 rounded text-white"
-                        data-testid={`champion-role-${champion.id}-${role.toLowerCase()}`}
-                      >
-                        {role}
-                      </span>
-                    ))}
-                    {champion.classes.map((champClass) => (
-                      <span 
-                        key={champClass}
-                        className="text-xs px-1 py-0.5 bg-lol-red/80 rounded text-white"
-                        data-testid={`champion-class-${champion.id}-${champClass.toLowerCase()}`}
-                      >
-                        {champClass}
-                      </span>
-                    ))}
+                  
+                  {/* Champion name at bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/90 p-2">
+                    <div className="text-sm font-bold text-white text-center truncate" data-testid={`champion-name-${champion.id}`}>
+                      {champion.name}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <div className="space-y-2">
+                  <div className="font-bold text-lol-gold">{champion.name}</div>
+                  <div className="text-sm text-gray-300 italic">{champion.title}</div>
+                  
+                  <div className="space-y-1">
+                    <div className="text-sm">
+                      <span className="font-semibold text-lol-blue">Roller:</span>
+                      <div className="flex gap-1 mt-1 flex-wrap">
+                        {champion.roles.map((role) => (
+                          <span 
+                            key={role}
+                            className="text-xs px-2 py-1 bg-lol-blue/80 rounded text-white"
+                          >
+                            {role}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="text-sm">
+                      <span className="font-semibold text-lol-red">Özellikler:</span>
+                      <div className="flex gap-1 mt-1 flex-wrap">
+                        {champion.classes.map((champClass) => (
+                          <span 
+                            key={champClass}
+                            className="text-xs px-2 py-1 bg-lol-red/80 rounded text-white"
+                          >
+                            {champClass === 'Fighter' ? 'Savaşçı' :
+                             champClass === 'Mage' ? 'Büyücü' :
+                             champClass === 'Assassin' ? 'Suikastçı' :
+                             champClass === 'Tank' ? 'Tank' :
+                             champClass === 'Marksman' ? 'Nişancı' :
+                             champClass === 'Support' ? 'Destek' :
+                             champClass}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           );
         })}
       </div>
