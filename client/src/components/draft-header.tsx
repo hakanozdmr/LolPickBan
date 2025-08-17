@@ -26,7 +26,7 @@ export function DraftHeader({ draftSession, champions, timer }: DraftHeaderProps
   const getChampionById = (id: string) => champions.find(c => c.id === id);
 
   const renderPickSlots = (picks: string[], team: 'blue' | 'red') => {
-    const slots = Array.from({ length: 6 }, (_, i) => {
+    const slots = Array.from({ length: 5 }, (_, i) => {
       const champion = picks[i] ? getChampionById(picks[i]) : null;
       return (
         <div
@@ -56,7 +56,7 @@ export function DraftHeader({ draftSession, champions, timer }: DraftHeaderProps
       );
     });
 
-    return <div className="grid grid-cols-6 gap-1">{slots}</div>;
+    return <div className="grid grid-cols-5 gap-2">{slots}</div>;
   };
 
   const renderBanSlots = (bans: string[], team: 'blue' | 'red') => {

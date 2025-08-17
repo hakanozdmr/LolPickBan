@@ -7,7 +7,7 @@ interface ActionBarProps {
   selectedChampion: Champion | null;
   onPickChampion: () => void;
   onBanChampion: () => void;
-  onStartDraft: () => void;
+  onOpenStartModal: () => void;
 }
 
 const PHASE_ACTIONS: Record<string, string> = {
@@ -24,7 +24,7 @@ export function ActionBar({
   selectedChampion, 
   onPickChampion, 
   onBanChampion, 
-  onStartDraft 
+  onOpenStartModal 
 }: ActionBarProps) {
   const currentAction = PHASE_ACTIONS[draftSession.phase] || "Eylem Seç";
   const isPick = draftSession.phase.includes('pick');
@@ -58,9 +58,9 @@ export function ActionBar({
         <div className="flex items-center gap-3">
           {isWaiting && (
             <Button
-              onClick={onStartDraft}
+              onClick={onOpenStartModal}
               className="bg-lol-accent hover:bg-lol-accent/80 text-black font-semibold"
-              data-testid="start-draft-button"
+              data-testid="open-start-modal-button"
             >
               <Check className="mr-2 h-4 w-4" />
               Draft Başlat

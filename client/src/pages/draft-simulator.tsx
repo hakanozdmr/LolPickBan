@@ -6,6 +6,7 @@ import { DraftHeader } from "@/components/draft-header";
 import { FiltersPanel } from "@/components/filters-panel";
 import { ChampionGrid } from "@/components/champion-grid";
 import { ActionBar } from "@/components/action-bar";
+import { DraftStartModal } from "@/components/draft-start-modal";
 import { useToast } from "@/hooks/use-toast";
 import { useAudio } from "@/hooks/use-audio";
 
@@ -27,6 +28,7 @@ export default function DraftSimulator() {
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [timer, setTimer] = useState(30);
   const [draftSessionId, setDraftSessionId] = useState<string | null>(null);
+  const [showStartModal, setShowStartModal] = useState(false);
 
   // Fetch champions
   const { data: champions = [], isLoading: championsLoading } = useQuery<Champion[]>({
@@ -81,6 +83,8 @@ export default function DraftSimulator() {
       toast({ title: "Draft Başladı!", description: "Ban fazı başlıyor..." });
       // Play epic draft music when starting
       playDraftMusic();
+      // Close the modal
+      setShowStartModal(false);
     },
   });
 
@@ -199,6 +203,10 @@ export default function DraftSimulator() {
     startDraftMutation.mutate();
   };
 
+  const handleOpenStartModal = () => {
+    setShowStartModal(true);
+  };
+
   const handlePickChampion = () => {
     if (!selectedChampion || !draftSession) return;
 
@@ -291,7 +299,14 @@ export default function DraftSimulator() {
         selectedChampion={selectedChampion}
         onPickChampion={handlePickChampion}
         onBanChampion={handleBanChampion}
+        onOpenStartModal={handleOpenStartModal}
+      />
+
+      <DraftStartModal
+        isOpen={showStartModal}
+        onClose={() => setShowStartModal(false)}
         onStartDraft={handleStartDraft}
+        isLoading={startDraftMutation.isPending}
       />
       
       {/* Add bottom padding to prevent content from being hidden behind action bar */}
