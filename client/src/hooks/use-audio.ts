@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react';
 import { AudioGenerator, GENERATED_SOUNDS } from '../utils/audio-generator';
 
-export function useAudio(globalVolume: number = 50) {
+export function useAudio(globalVolume: number = 50, preferYouTube: boolean = true) {
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
   const draftMusicSource = useRef<AudioBufferSourceNode | null>(null);
   const youtubeAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -24,7 +24,7 @@ export function useAudio(globalVolume: number = 50) {
       }
       
       const audio = audioRefs.current[soundName];
-      audio.volume = volume;
+      audio.volume = volume * volumeMultiplier;
       audio.currentTime = 0;
       audio.play().catch(() => {
         // Fallback to generated sounds if files don't exist
@@ -46,7 +46,7 @@ export function useAudio(globalVolume: number = 50) {
     } catch (error) {
       console.warn('Could not play sound:', soundName, error);
     }
-  }, [playGeneratedSound]);
+  }, [playGeneratedSound, volumeMultiplier]);
 
   const playDraftMusic = useCallback(() => {
     // Stop any existing draft music
@@ -57,52 +57,53 @@ export function useAudio(globalVolume: number = 50) {
       youtubeAudioRef.current.pause();
     }
     
-    // Create YouTube audio URL - this tries to get the audio from YouTube
-    // Note: This may not work due to CORS, will fallback to generated music
-    try {
-      console.log('Attempting to play YouTube music...');
-      
-      // YouTube iframe embed approach (hidden)
-      const iframe = document.createElement('iframe');
-      iframe.src = 'https://www.youtube.com/embed/SC8_QunSiOg?autoplay=1&controls=0&loop=1&playlist=SC8_QunSiOg&mute=0&start=0';
-      iframe.style.position = 'fixed';
-      iframe.style.top = '-200px';
-      iframe.style.left = '-200px';
-      iframe.style.width = '100px';
-      iframe.style.height = '100px';
-      iframe.style.opacity = '0';
-      iframe.style.pointerEvents = 'none';
-      iframe.allow = 'autoplay; encrypted-media';
-      iframe.setAttribute('allowfullscreen', '');
-      
-      // Remove any existing iframe
-      const existingIframe = document.getElementById('youtube-draft-music');
-      if (existingIframe) {
-        existingIframe.remove();
-      }
-      
-      iframe.id = 'youtube-draft-music';
-      document.body.appendChild(iframe);
-      
-      console.log('YouTube iframe created for draft music');
-      
-    } catch (error) {
-      console.warn('YouTube music approach failed, using generated music:', error);
-      
-      // Fallback to our epic generated music
-      if (GENERATED_SOUNDS.draftMusic) {
-        try {
-          draftMusicSource.current = AudioGenerator.playBuffer(GENERATED_SOUNDS.draftMusic, 0.4);
-          
-          if (draftMusicSource.current) {
-            draftMusicSource.current.loop = true;
-          }
-        } catch (fallbackError) {
-          console.warn('Could not play any draft music:', fallbackError);
+    // Remove any existing iframe
+    const existingIframe = document.getElementById('youtube-draft-music');
+    if (existingIframe) {
+      existingIframe.remove();
+    }
+    
+    // Primary approach: Use our controllable generated music
+    if (GENERATED_SOUNDS.draftMusic) {
+      try {
+        const adjustedVolume = 0.4 * volumeMultiplier;
+        draftMusicSource.current = AudioGenerator.playBuffer(GENERATED_SOUNDS.draftMusic, adjustedVolume);
+        
+        if (draftMusicSource.current) {
+          draftMusicSource.current.loop = true;
         }
+        
+        console.log(`Epic draft music playing at ${Math.round(volumeMultiplier * 100)}% volume`);
+        
+        // Optional: Add YouTube music as background if user prefers it and volume is not zero
+        if (preferYouTube && volumeMultiplier > 0) {
+          try {
+            const shouldMute = volumeMultiplier < 0.1;
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.youtube.com/embed/SC8_QunSiOg?autoplay=1&controls=0&loop=1&playlist=SC8_QunSiOg&mute=${shouldMute ? 1 : 0}&start=0&volume=20`;
+            iframe.style.position = 'fixed';
+            iframe.style.top = '-200px';
+            iframe.style.left = '-200px';
+            iframe.style.width = '100px';
+            iframe.style.height = '100px';
+            iframe.style.opacity = '0';
+            iframe.style.pointerEvents = 'none';
+            iframe.allow = 'autoplay; encrypted-media';
+            iframe.setAttribute('allowfullscreen', '');
+            iframe.id = 'youtube-draft-music';
+            
+            document.body.appendChild(iframe);
+            console.log('YouTube background music added');
+          } catch (youtubeError) {
+            console.log('YouTube background music not available:', youtubeError);
+          }
+        }
+        
+      } catch (error) {
+        console.warn('Could not play draft music:', error);
       }
     }
-  }, []);
+  }, [volumeMultiplier]);
 
   const playPickSound = useCallback(() => {
     playGeneratedSound(GENERATED_SOUNDS.pickSound, 0.7);
