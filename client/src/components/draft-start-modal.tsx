@@ -47,20 +47,11 @@ export function DraftStartModal({ isOpen, onClose, onStartDraft, isLoading }: Dr
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-3 mt-6">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="flex-1 border-gray-600 text-white hover:bg-gray-700"
-            data-testid="cancel-draft-button"
-          >
-            İptal
-          </Button>
-          
+        <div className="mt-6">
           <Button
             onClick={onStartDraft}
             disabled={isLoading}
-            className="flex-1 lol-bg-gold hover:bg-yellow-600 text-black font-semibold"
+            className="w-full lol-bg-gold hover:bg-yellow-600 text-black font-semibold"
             data-testid="confirm-start-draft-button"
           >
             <Play className="w-4 h-4 mr-2" />
