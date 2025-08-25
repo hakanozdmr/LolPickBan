@@ -123,9 +123,9 @@ export function CompactFilters({
       </div>
 
       {/* Role and Class Filters */}
-      <div className="flex flex-wrap items-center justify-center gap-6">
+      <div className="flex flex-wrap items-center justify-center gap-8 py-4">
         {/* Role Icons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           {ROLES.map((role) => {
             const isActive = selectedRoles.includes(role.id);
             
@@ -135,7 +135,7 @@ export function CompactFilters({
                 variant="ghost"
                 size="sm"
                 onClick={() => onRoleToggle(role.id)}
-                className={`p-2 lol-bg-dark hover:bg-lol-blue/20 border transition-all duration-200 ${
+                className={`p-3 lol-bg-dark hover:bg-lol-blue/20 border transition-all duration-200 ${
                   isActive 
                     ? 'bg-lol-blue/20 border-lol-blue' 
                     : 'border-transparent hover:border-lol-blue'
@@ -146,7 +146,7 @@ export function CompactFilters({
                 <img 
                   src={role.iconUrl} 
                   alt={role.name}
-                  className={`h-4 w-4 ${isActive ? 'brightness-125' : 'brightness-90'}`} 
+                  className={`h-6 w-6 ${isActive ? 'brightness-125' : 'brightness-90'}`} 
                 />
               </Button>
             );
@@ -154,7 +154,7 @@ export function CompactFilters({
         </div>
 
         {/* Class Icons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           {CLASSES.map((champClass) => {
             const isActive = selectedClasses.includes(champClass.id);
             
@@ -164,7 +164,7 @@ export function CompactFilters({
                 variant="ghost"
                 size="sm"
                 onClick={() => onClassToggle(champClass.id)}
-                className={`p-2 lol-bg-dark hover:bg-lol-red/20 border transition-all duration-200 ${
+                className={`p-3 lol-bg-dark hover:bg-lol-red/20 border transition-all duration-200 ${
                   isActive 
                     ? 'bg-lol-red/20 border-lol-red' 
                     : 'border-transparent hover:border-lol-red'
@@ -175,7 +175,7 @@ export function CompactFilters({
                 <img 
                   src={champClass.iconUrl} 
                   alt={champClass.name}
-                  className={`h-4 w-4 ${isActive ? 'brightness-125' : 'brightness-90'}`} 
+                  className={`h-6 w-6 ${isActive ? 'brightness-125' : 'brightness-90'}`} 
                 />
               </Button>
             );
