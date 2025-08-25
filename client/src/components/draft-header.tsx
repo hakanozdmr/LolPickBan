@@ -56,7 +56,9 @@ export function DraftHeader({
               ? `border-lol-gold shadow-lg shadow-lol-gold/50 bg-lol-gold/10 animate-slow-pulse`
               : champion
                 ? `border-${team === "blue" ? "lol-blue" : "lol-red"} shadow-xl`
-                : "border-gray-600 bg-black"
+                : !selectedChampion 
+                  ? "border-gray-600 bg-black"
+                  : "border-gray-600 bg-gray-700"
           }`}
           data-testid={`${team}-pick-slot-${i}`}
         >
