@@ -164,7 +164,15 @@ export default function DraftSimulator() {
 
     const phaseDuration = PHASE_DURATIONS[draftSession.phase as keyof typeof PHASE_DURATIONS] || 30;
     setTimer(phaseDuration);
-  }, [draftSession?.phase]);
+  }, [
+    draftSession?.phase, 
+    draftSession?.currentTeam, 
+    draftSession?.phaseStep,
+    draftSession?.blueTeamBans?.length,
+    draftSession?.redTeamBans?.length,
+    draftSession?.blueTeamPicks?.length,
+    draftSession?.redTeamPicks?.length
+  ]);
 
   // Countdown timer interval
   useEffect(() => {
