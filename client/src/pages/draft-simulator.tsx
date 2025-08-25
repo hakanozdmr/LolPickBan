@@ -188,17 +188,34 @@ export default function DraftSimulator() {
         
         const newTimer = prevTimer - 1;
         
-        // Just show timeout message when timer reaches 0 - don't auto advance
+        // Auto-action when timer reaches 0
         if (newTimer <= 0) {
-          const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
-          const isBanPhase = draftSession.phase === 'ban1' || draftSession.phase === 'ban2';
-          const phaseType = isBanPhase ? 'ban' : 'seçim';
-          
-          toast({
-            title: "Zaman Aşımı",
-            description: `${teamName} takım ${phaseType} süresi doldu. Draft duraklatıldı.`,
-            variant: "destructive"
-          });
+          // Use setTimeout to avoid dependency issues with mutations
+          setTimeout(() => {
+            const isBanPhase = draftSession.phase === 'ban1' || draftSession.phase === 'ban2';
+            const isPickPhase = draftSession.phase === 'pick1' || draftSession.phase === 'pick2';
+            
+            if (isBanPhase) {
+              // Auto-ban with empty ban if no champion selected
+              banChampionMutation.mutate(selectedChampion?.id || "");
+              
+              const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
+              toast({
+                title: "Otomatik Ban",
+                description: selectedChampion 
+                  ? `${selectedChampion.name} ${teamName} takım tarafından otomatik banlandı.`
+                  : `${teamName} takım zaman aşımı nedeniyle boş ban yaptı.`,
+              });
+            } else if (isPickPhase) {
+              // For pick phases, just show timeout message and don't auto advance
+              const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
+              toast({
+                title: "Zaman Aşımı",
+                description: `${teamName} takım seçim süresi doldu. Draft duraklatıldı.`,
+                variant: "destructive"
+              });
+            }
+          }, 100); // Small delay to avoid dependency conflicts
           
           return 0;
         }
