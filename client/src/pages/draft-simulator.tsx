@@ -174,17 +174,7 @@ export default function DraftSimulator() {
     draftSession?.redTeamPicks?.length
   ]);
 
-  // Countdown timer interval - PAUSED
-  useEffect(() => {
-    if (!draftSession || draftSession.phase === 'waiting' || draftSession.phase === 'completed') {
-      return;
-    }
-    
-    // Timer is paused - no interval will be set
-    return;
-  }, [draftSession?.phase, draftSession?.currentTeam, draftSession?.phaseStep]);
-
-  /* Timer logic disabled - uncomment to re-enable
+  // Countdown timer interval
   useEffect(() => {
     if (!draftSession || draftSession.phase === 'waiting' || draftSession.phase === 'completed') {
       return;
@@ -248,7 +238,6 @@ export default function DraftSimulator() {
 
     return () => clearInterval(interval);
   }, [draftSession?.phase, draftSession?.currentTeam, draftSession?.phaseStep]); // Removed mutation dependencies
-  */
 
   // Filter champions
   const filteredChampions = useMemo(() => {
