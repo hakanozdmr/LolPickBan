@@ -91,6 +91,9 @@ export function DraftHeader({ draftSession, champions, timer, selectedChampion, 
       const isCurrentTeamTurn = draftSession.currentTeam === team;
       const isActiveBanSlot = isBanPhase && isCurrentTeamTurn && !champion && i === bans.length;
       
+      // Check if this is an empty ban (banned but no champion)
+      const isEmptyBan = i < bans.length && bans[i] === "";
+      
       // Show selected champion as preview in active ban slot
       const previewChampion = (isActiveBanSlot && selectedChampion) ? selectedChampion : champion;
       
@@ -118,6 +121,11 @@ export function DraftHeader({ draftSession, champions, timer, selectedChampion, 
               {isActiveBanSlot && selectedChampion && (
                 <div className="absolute inset-0 border-2 border-red-400 animate-pulse"></div>
               )}
+            </>
+          ) : isEmptyBan ? (
+            <>
+              <div className="w-full h-full bg-red-800/50"></div>
+              <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-500 text-lg font-bold">✕</span>
             </>
           ) : (
             <span className="text-gray-500 text-xs">🚫</span>
