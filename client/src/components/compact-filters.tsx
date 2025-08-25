@@ -1,6 +1,17 @@
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import topIcon from "../assets/icons/top.png";
+import jungleIcon from "../assets/icons/jungle.png";
+import midIcon from "../assets/icons/mid.png";
+import adcIcon from "../assets/icons/adc.png";
+import supportIcon from "../assets/icons/support.png";
+import assassinIcon from "../assets/icons/assassin.png";
+import mageIcon from "../assets/icons/mage.png";
+import tankIcon from "../assets/icons/tank.png";
+import fighterIcon from "../assets/icons/fighter.png";
+import marksmanIcon from "../assets/icons/marksman.png";
+import supportClassIcon from "../assets/icons/support-class.png";
 
 interface CompactFiltersProps {
   searchTerm: string;
@@ -16,27 +27,27 @@ const ROLES = [
   { 
     id: 'Top', 
     name: 'Üst Koridor', 
-    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/e/ef/Top_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143602'
+    iconUrl: topIcon
   },
   { 
     id: 'Jungle', 
     name: 'Orman', 
-    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/1/1b/Jungle_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143559'
+    iconUrl: jungleIcon
   },
   { 
     id: 'Mid', 
     name: 'Orta Koridor', 
-    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/9/98/Middle_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143644'
+    iconUrl: midIcon
   },
   { 
     id: 'ADC', 
     name: 'Alt Koridor', 
-    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/9/97/Bottom_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143632'
+    iconUrl: adcIcon
   },
   { 
     id: 'Support', 
     name: 'Destek', 
-    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/e/e0/Support_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143601'
+    iconUrl: supportIcon
   },
 ];
 
@@ -44,32 +55,32 @@ const CLASSES = [
   { 
     id: 'Assassin', 
     name: 'Suikastçı', 
-    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/2/28/Slayer_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143556'
+    iconUrl: assassinIcon
   },
   { 
     id: 'Mage', 
     name: 'Büyücü', 
-    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/2/28/Mage_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143555'
+    iconUrl: mageIcon
   },
   { 
     id: 'Tank', 
     name: 'Tank', 
-    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/5/5a/Tank_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143558'
+    iconUrl: tankIcon
   },
   { 
     id: 'Fighter', 
     name: 'Savaşçı', 
-    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/8/8f/Fighter_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143554'
+    iconUrl: fighterIcon
   },
   { 
     id: 'Marksman', 
     name: 'Nişancı', 
-    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/7/7f/Marksman_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143555'
+    iconUrl: marksmanIcon
   },
   { 
     id: 'Support', 
     name: 'Destek', 
-    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/e/e0/Support_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143601'
+    iconUrl: supportClassIcon
   },
 ];
 
