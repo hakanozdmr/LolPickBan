@@ -162,6 +162,14 @@ export default function DraftSimulator() {
     }
   }, []);
 
+  // Auto-start draft when coming from tournament
+  useEffect(() => {
+    if (draftSession && draftSession.phase === 'waiting' && draftSession.matchId && !showStartModal) {
+      // This is a tournament match draft, start automatically
+      startDraftMutation.mutate();
+    }
+  }, [draftSession, showStartModal]);
+
   // Timer logic - countdown functionality
   useEffect(() => {
     if (!draftSession || draftSession.phase === 'waiting' || draftSession.phase === 'completed') {
