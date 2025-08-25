@@ -188,46 +188,17 @@ export default function DraftSimulator() {
         
         const newTimer = prevTimer - 1;
         
-        // Auto-action when timer reaches 0
+        // Just show timeout message when timer reaches 0 - don't auto advance
         if (newTimer <= 0) {
-          // Use setTimeout to avoid dependency issues with mutations
-          setTimeout(() => {
-            const isBanPhase = draftSession.phase === 'ban1' || draftSession.phase === 'ban2';
-            const isPickPhase = draftSession.phase === 'pick1' || draftSession.phase === 'pick2';
-            
-            if (isBanPhase) {
-              // Auto-ban with empty ban if no champion selected
-              banChampionMutation.mutate(selectedChampion?.id || "");
-              
-              const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
-              toast({
-                title: "Otomatik Ban",
-                description: selectedChampion 
-                  ? `${selectedChampion.name} ${teamName} takım tarafından otomatik banlandı.`
-                  : `${teamName} takım zaman aşımı nedeniyle boş ban yaptı.`,
-              });
-            } else if (isPickPhase) {
-              // Auto-pick with empty pick if no champion selected
-              if (selectedChampion) {
-                pickChampionMutation.mutate(selectedChampion.id);
-                
-                const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
-                toast({
-                  title: "Otomatik Seçim",
-                  description: `${selectedChampion.name} ${teamName} takım için otomatik seçildi.`,
-                });
-              } else {
-                // For picks, we still need to advance the phase even with no selection
-                pickChampionMutation.mutate("");
-                
-                const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
-                toast({
-                  title: "Otomatik Seçim",
-                  description: `${teamName} takım zaman aşımı nedeniyle şampiyon seçemedi.`,
-                });
-              }
-            }
-          }, 100); // Small delay to avoid dependency conflicts
+          const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
+          const isBanPhase = draftSession.phase === 'ban1' || draftSession.phase === 'ban2';
+          const phaseType = isBanPhase ? 'ban' : 'seçim';
+          
+          toast({
+            title: "Zaman Aşımı",
+            description: `${teamName} takım ${phaseType} süresi doldu. Draft duraklatıldı.`,
+            variant: "destructive"
+          });
           
           return 0;
         }
