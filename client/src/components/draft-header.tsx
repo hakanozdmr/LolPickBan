@@ -144,18 +144,10 @@ export function DraftHeader({ draftSession, champions, timer, selectedChampion, 
       </div>
 
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <Gamepad2 className="lol-text-gold text-xl" />
-            <h1 className="text-xl font-bold lol-text-gold" data-testid="draft-title">
-              Draft Simulator
-            </h1>
-            <AudioControl onVolumeChange={onVolumeChange} />
-          </div>
-          <div className="text-right">
-            <div className="text-sm lol-text-gray">Game 1 of 3</div>
-            <div className="text-lg font-semibold">Best of 3</div>
-          </div>
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-bold lol-text-gold" data-testid="tournament-title">
+            TURNUVA ADI*
+          </h1>
         </div>
         
         <div className="flex items-center justify-center gap-8">
