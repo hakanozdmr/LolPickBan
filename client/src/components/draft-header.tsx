@@ -26,10 +26,10 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
       return (
         <div
           key={i}
-          className={`aspect-square rounded-lg flex items-center justify-center relative overflow-hidden border-2 ${
+          className={`w-20 h-24 rounded-lg flex items-center justify-center relative overflow-hidden border-3 transition-all duration-300 ${
             champion 
-              ? `border-${team === 'blue' ? 'lol-blue' : 'lol-red'}` 
-              : 'border-dashed border-gray-600 bg-gray-800'
+              ? `border-${team === 'blue' ? 'lol-blue' : 'lol-red'} shadow-lg bg-gradient-to-b from-gray-800 to-gray-900` 
+              : 'border-dashed border-gray-600 bg-gray-800 hover:border-gray-500'
           }`}
           data-testid={`${team}-pick-slot-${i}`}
         >
@@ -38,20 +38,22 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
               <img 
                 src={champion.image} 
                 alt={champion.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover scale-110 hover:scale-125 transition-transform duration-300"
               />
-              <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-xs p-1 text-center text-white">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+              <div className="absolute bottom-0 left-0 right-0 bg-black/90 text-xs p-2 text-center text-white font-semibold">
                 {champion.name}
               </div>
+              <div className={`absolute top-1 right-1 w-3 h-3 rounded-full ${team === 'blue' ? 'bg-lol-blue' : 'bg-lol-true-red'} shadow-lg`}></div>
             </>
           ) : (
-            <span className="text-gray-500 text-xl">+</span>
+            <span className="text-gray-500 text-2xl font-light opacity-60">+</span>
           )}
         </div>
       );
     });
 
-    return <div className="grid grid-cols-5 gap-2">{slots}</div>;
+    return <div className="grid grid-cols-5 gap-3">{slots}</div>;
   };
 
   const renderBanSlots = (bans: string[], team: 'blue' | 'red') => {
