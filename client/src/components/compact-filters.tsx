@@ -39,16 +39,16 @@ export function CompactFilters({
   onClearFilters,
 }: CompactFiltersProps) {
   return (
-    <div className="space-y-4 mb-6">
+    <div className="space-y-4 mb-6 flex flex-col items-center">
       {/* Search */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex items-center gap-4 justify-center">
+        <div className="relative max-w-md">
           <Input
             type="text"
             placeholder="Şampiyon ara..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="lol-bg-dark border-gray-600 pl-10 text-white placeholder-gray-400 focus:border-lol-accent"
+            className="lol-bg-dark border-gray-600 pl-10 text-white placeholder-gray-400 focus:border-lol-accent w-80"
             data-testid="search-input"
           />
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -68,12 +68,9 @@ export function CompactFilters({
       </div>
 
       {/* Role and Class Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-sm font-medium lol-text-gray">Filtreler:</span>
-        
+      <div className="flex flex-wrap items-center justify-center gap-6">
         {/* Role Icons */}
         <div className="flex items-center gap-2">
-          <span className="text-xs lol-text-gray">Rol:</span>
           {ROLES.map((role) => {
             const IconComponent = role.icon;
             const isActive = selectedRoles.includes(role.id);
@@ -100,7 +97,6 @@ export function CompactFilters({
 
         {/* Class Icons */}
         <div className="flex items-center gap-2">
-          <span className="text-xs lol-text-gray">Sınıf:</span>
           {CLASSES.map((champClass) => {
             const IconComponent = champClass.icon;
             const isActive = selectedClasses.includes(champClass.id);
