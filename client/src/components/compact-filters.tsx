@@ -1,19 +1,6 @@
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
-  TopIcon, 
-  JungleIcon, 
-  MidIcon, 
-  AdcIcon, 
-  SupportIcon,
-  AssassinIcon,
-  MageIcon,
-  TankIcon,
-  FighterIcon,
-  MarksmanIcon,
-  SupportClassIcon
-} from "@/components/lol-icons";
 
 interface CompactFiltersProps {
   searchTerm: string;
@@ -26,20 +13,64 @@ interface CompactFiltersProps {
 }
 
 const ROLES = [
-  { id: 'Top', name: 'Üst Koridor', icon: TopIcon },
-  { id: 'Jungle', name: 'Orman', icon: JungleIcon },
-  { id: 'Mid', name: 'Orta Koridor', icon: MidIcon },
-  { id: 'ADC', name: 'Alt Koridor', icon: AdcIcon },
-  { id: 'Support', name: 'Destek', icon: SupportIcon },
+  { 
+    id: 'Top', 
+    name: 'Üst Koridor', 
+    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/e/ef/Top_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143602'
+  },
+  { 
+    id: 'Jungle', 
+    name: 'Orman', 
+    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/1/1b/Jungle_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143559'
+  },
+  { 
+    id: 'Mid', 
+    name: 'Orta Koridor', 
+    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/9/98/Middle_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143644'
+  },
+  { 
+    id: 'ADC', 
+    name: 'Alt Koridor', 
+    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/9/97/Bottom_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143632'
+  },
+  { 
+    id: 'Support', 
+    name: 'Destek', 
+    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/e/e0/Support_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143601'
+  },
 ];
 
 const CLASSES = [
-  { id: 'Assassin', name: 'Suikastçı', icon: AssassinIcon },
-  { id: 'Mage', name: 'Büyücü', icon: MageIcon },
-  { id: 'Tank', name: 'Tank', icon: TankIcon },
-  { id: 'Fighter', name: 'Savaşçı', icon: FighterIcon },
-  { id: 'Marksman', name: 'Nişancı', icon: MarksmanIcon },
-  { id: 'Support', name: 'Destek', icon: SupportClassIcon },
+  { 
+    id: 'Assassin', 
+    name: 'Suikastçı', 
+    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/2/28/Slayer_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143556'
+  },
+  { 
+    id: 'Mage', 
+    name: 'Büyücü', 
+    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/2/28/Mage_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143555'
+  },
+  { 
+    id: 'Tank', 
+    name: 'Tank', 
+    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/5/5a/Tank_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143558'
+  },
+  { 
+    id: 'Fighter', 
+    name: 'Savaşçı', 
+    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/8/8f/Fighter_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143554'
+  },
+  { 
+    id: 'Marksman', 
+    name: 'Nişancı', 
+    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/7/7f/Marksman_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143555'
+  },
+  { 
+    id: 'Support', 
+    name: 'Destek', 
+    iconUrl: 'https://static.wikia.nocookie.net/leagueoflegends/images/e/e0/Support_icon.png/revision/latest/smart/width/40/height/30?cb=20181117143601'
+  },
 ];
 
 export function CompactFilters({
@@ -85,7 +116,6 @@ export function CompactFilters({
         {/* Role Icons */}
         <div className="flex items-center gap-2">
           {ROLES.map((role) => {
-            const IconComponent = role.icon;
             const isActive = selectedRoles.includes(role.id);
             
             return (
@@ -102,7 +132,11 @@ export function CompactFilters({
                 data-testid={`role-filter-${role.id.toLowerCase()}`}
                 title={role.name}
               >
-                <IconComponent className={`h-4 w-4 ${isActive ? 'lol-text-blue' : 'lol-text-accent'}`} />
+                <img 
+                  src={role.iconUrl} 
+                  alt={role.name}
+                  className={`h-4 w-4 ${isActive ? 'brightness-125' : 'brightness-90'}`} 
+                />
               </Button>
             );
           })}
@@ -111,7 +145,6 @@ export function CompactFilters({
         {/* Class Icons */}
         <div className="flex items-center gap-2">
           {CLASSES.map((champClass) => {
-            const IconComponent = champClass.icon;
             const isActive = selectedClasses.includes(champClass.id);
             
             return (
@@ -128,7 +161,11 @@ export function CompactFilters({
                 data-testid={`class-filter-${champClass.id.toLowerCase()}`}
                 title={champClass.name}
               >
-                <IconComponent className={`h-4 w-4 ${isActive ? 'lol-text-red' : 'lol-text-accent'}`} />
+                <img 
+                  src={champClass.iconUrl} 
+                  alt={champClass.name}
+                  className={`h-4 w-4 ${isActive ? 'brightness-125' : 'brightness-90'}`} 
+                />
               </Button>
             );
           })}
