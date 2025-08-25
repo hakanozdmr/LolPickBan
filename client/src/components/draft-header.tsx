@@ -44,7 +44,6 @@ export function DraftHeader({
       const isActiveSlot =
         isPickPhase && isCurrentTeamTurn && !champion && i === picks.length;
 
-
       // Show selected champion as preview in active slot
       const previewChampion =
         isActiveSlot && selectedChampion ? selectedChampion : champion;
@@ -52,7 +51,7 @@ export function DraftHeader({
       return (
         <div
           key={i}
-          className={`w-20 h-32 sm:w-24 sm:h-36 md:w-28 md:h-40 lg:w-32 lg:h-44 xl:w-36 xl:h-48 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
+          className={`w-24 h-20 sm:w-28 sm:h-40 md:w-32 md:h-60 lg:w-36 lg:h-80 xl:w-40 xl:h-100 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
             isActiveSlot
               ? `border-lol-gold shadow-lg shadow-lol-gold/50 bg-lol-gold/10 animate-slow-pulse`
               : champion
