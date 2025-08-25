@@ -40,7 +40,7 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
           key={i}
           className={`w-16 h-24 sm:w-20 sm:h-28 md:w-24 md:h-32 lg:w-28 lg:h-36 xl:w-32 xl:h-40 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
             isActiveSlot 
-              ? `border-lol-gold shadow-lg shadow-lol-gold/50 animate-pulse bg-lol-gold/10`
+              ? `border-lol-gold shadow-lg shadow-lol-gold/50 bg-lol-gold/10 animate-bounce`
               : champion 
                 ? `border-${team === 'blue' ? 'lol-blue' : 'lol-red'} shadow-xl` 
                 : 'border-gray-600 bg-gray-700'
@@ -89,7 +89,7 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
           key={i}
           className={`w-10 h-10 rounded border flex items-center justify-center relative overflow-hidden transition-all duration-300 ${
             isActiveBanSlot
-              ? 'bg-red-500/30 border-red-400 shadow-lg shadow-red-400/50 animate-pulse'
+              ? 'bg-red-500/30 border-red-400 shadow-lg shadow-red-400/50 animate-bounce'
               : champion 
                 ? 'bg-red-800/50 border-red-500' 
                 : 'bg-gray-800 border-gray-600'
