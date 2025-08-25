@@ -90,7 +90,7 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
   return (
     <div className="lol-bg-darker border-b border-gray-700 px-6 py-4">
       {/* Progress Bar */}
-      <div className="w-full h-2 bg-gray-700 mb-4">
+      <div className={`w-full h-2 bg-gray-700 mb-4 flex ${isBlueTeamTurn ? 'justify-start' : 'justify-end'}`}>
         <div 
           className={`h-full transition-all duration-1000 ease-linear ${progressBarColor}`}
           style={{ width: `${progressPercentage}%` }}
