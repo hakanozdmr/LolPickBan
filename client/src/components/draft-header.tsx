@@ -143,45 +143,45 @@ export function DraftHeader({ draftSession, champions, timer, selectedChampion, 
         ></div>
       </div>
 
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-4">
-          <h1 className="text-2xl font-bold lol-text-gold" data-testid="tournament-title">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-0">
+        <div className="text-center mb-3 sm:mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold lol-text-gold" data-testid="tournament-title">
             TURNUVA ADI*
           </h1>
         </div>
         
-        <div className="flex items-center justify-center gap-8">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-4 sm:gap-6 lg:gap-8">
           {/* Blue Team */}
-          <div className="flex-1">
-            <div className="text-center mb-3">
-              <h2 className="text-lg font-semibold lol-text-blue" data-testid="blue-team-title">
+          <div className="flex-1 w-full">
+            <div className="text-center mb-2 sm:mb-3">
+              <h2 className="text-base sm:text-lg font-semibold lol-text-blue" data-testid="blue-team-title">
                 MAVİ TAKIM
               </h2>
             </div>
             {renderPickSlots(draftSession.blueTeamPicks, 'blue')}
             
-            <div className="mt-4">
-              <h3 className="text-sm font-medium lol-text-gray mb-2">BANLAR</h3>
+            <div className="mt-3 sm:mt-4">
+              <h3 className="text-xs sm:text-sm font-medium lol-text-gray mb-1 sm:mb-2">BANLAR</h3>
               {renderBanSlots(draftSession.blueTeamBans, 'blue')}
             </div>
           </div>
 
           {/* VS Indicator */}
-          <div className="text-center px-4">
-            <div className="text-3xl font-bold lol-text-gold" data-testid="vs-indicator">VS</div>
+          <div className="text-center px-2 sm:px-4 order-first lg:order-none">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-bold lol-text-gold" data-testid="vs-indicator">VS</div>
           </div>
 
           {/* Red Team */}
-          <div className="flex-1">
-            <div className="text-center mb-3">
-              <h2 className="text-lg font-semibold lol-text-red" data-testid="red-team-title">
+          <div className="flex-1 w-full">
+            <div className="text-center mb-2 sm:mb-3">
+              <h2 className="text-base sm:text-lg font-semibold lol-text-red" data-testid="red-team-title">
                 KIRMIZI TAKIM
               </h2>
             </div>
             {renderPickSlots(draftSession.redTeamPicks, 'red')}
             
-            <div className="mt-4">
-              <h3 className="text-sm font-medium lol-text-gray mb-2">BANLAR</h3>
+            <div className="mt-3 sm:mt-4">
+              <h3 className="text-xs sm:text-sm font-medium lol-text-gray mb-1 sm:mb-2">BANLAR</h3>
               {renderBanSlots(draftSession.redTeamBans, 'red')}
             </div>
           </div>
