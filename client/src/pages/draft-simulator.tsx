@@ -155,7 +155,7 @@ export default function DraftSimulator() {
     }
   }, []);
 
-  // Timer logic - disabled for manual progression
+  // Timer logic - countdown functionality
   useEffect(() => {
     if (!draftSession || draftSession.phase === 'waiting' || draftSession.phase === 'completed') {
       setTimer(0);
@@ -165,6 +165,64 @@ export default function DraftSimulator() {
     const phaseDuration = PHASE_DURATIONS[draftSession.phase as keyof typeof PHASE_DURATIONS] || 30;
     setTimer(phaseDuration);
   }, [draftSession?.phase]);
+
+  // Countdown timer interval
+  useEffect(() => {
+    if (!draftSession || draftSession.phase === 'waiting' || draftSession.phase === 'completed' || timer <= 0) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setTimer((prevTimer) => {
+        const newTimer = prevTimer - 1;
+        
+        // Auto-action when timer reaches 0
+        if (newTimer <= 0) {
+          const isBanPhase = draftSession.phase === 'ban1' || draftSession.phase === 'ban2';
+          const isPickPhase = draftSession.phase === 'pick1' || draftSession.phase === 'pick2';
+          
+          if (isBanPhase) {
+            // Auto-ban with empty ban if no champion selected
+            banChampionMutation.mutate(selectedChampion?.id || "");
+            
+            const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
+            toast({
+              title: "Otomatik Ban",
+              description: selectedChampion 
+                ? `${selectedChampion.name} ${teamName} takım tarafından otomatik banlandı.`
+                : `${teamName} takım zaman aşımı nedeniyle boş ban yaptı.`,
+            });
+          } else if (isPickPhase) {
+            // Auto-pick with empty pick if no champion selected
+            if (selectedChampion) {
+              pickChampionMutation.mutate(selectedChampion.id);
+              
+              const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
+              toast({
+                title: "Otomatik Seçim",
+                description: `${selectedChampion.name} ${teamName} takım için otomatik seçildi.`,
+              });
+            } else {
+              // For picks, we still need to advance the phase even with no selection
+              pickChampionMutation.mutate("");
+              
+              const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
+              toast({
+                title: "Otomatik Seçim",
+                description: `${teamName} takım zaman aşımı nedeniyle şampiyon seçemedi.`,
+              });
+            }
+          }
+          
+          return 0;
+        }
+        
+        return newTimer;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [draftSession, timer, selectedChampion, banChampionMutation, pickChampionMutation, toast]);
 
   // Filter champions
   const filteredChampions = useMemo(() => {

@@ -78,11 +78,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/draft-sessions/:id/ban", async (req, res) => {
     try {
       const { championId } = req.body;
-      if (!championId) {
-        res.status(400).json({ message: "Champion ID is required" });
-        return;
-      }
-      const session = await storage.banChampion(req.params.id, championId);
+      // Allow empty bans by accepting null or "EMPTY_BAN" as valid championId
+      const banChampionId = championId || "EMPTY_BAN";
+      const session = await storage.banChampion(req.params.id, banChampionId);
       if (!session) {
         res.status(404).json({ message: "Draft session not found" });
         return;
@@ -97,11 +95,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/draft-sessions/:id/pick", async (req, res) => {
     try {
       const { championId } = req.body;
-      if (!championId) {
-        res.status(400).json({ message: "Champion ID is required" });
-        return;
-      }
-      const session = await storage.pickChampion(req.params.id, championId);
+      // Allow empty picks by accepting null or "EMPTY_PICK" as valid championId
+      const pickChampionId = championId || "EMPTY_PICK";
+      const session = await storage.pickChampion(req.params.id, pickChampionId);
       if (!session) {
         res.status(404).json({ message: "Draft session not found" });
         return;
