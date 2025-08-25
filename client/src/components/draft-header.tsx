@@ -26,34 +26,39 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
       return (
         <div
           key={i}
-          className={`w-20 h-24 rounded-lg flex items-center justify-center relative overflow-hidden border-3 transition-all duration-300 ${
+          className={`w-24 h-32 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
             champion 
-              ? `border-${team === 'blue' ? 'lol-blue' : 'lol-red'} shadow-lg bg-gradient-to-b from-gray-800 to-gray-900` 
-              : 'border-dashed border-gray-600 bg-gray-800 hover:border-gray-500'
+              ? `border-${team === 'blue' ? 'lol-blue' : 'lol-red'} shadow-xl` 
+              : 'border-gray-600 bg-gray-700'
           }`}
           data-testid={`${team}-pick-slot-${i}`}
         >
           {champion ? (
             <>
-              <img 
-                src={champion.image} 
-                alt={champion.name}
-                className="w-full h-full object-cover scale-110 hover:scale-125 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-              <div className="absolute bottom-0 left-0 right-0 bg-black/90 text-xs p-2 text-center text-white font-semibold">
-                {champion.name}
+              <div className="flex-1 relative overflow-hidden">
+                <img 
+                  src={champion.image} 
+                  alt={champion.name}
+                  className="w-full h-full object-cover object-top"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80"></div>
               </div>
-              <div className={`absolute top-1 right-1 w-3 h-3 rounded-full ${team === 'blue' ? 'bg-lol-blue' : 'bg-lol-true-red'} shadow-lg`}></div>
+              <div className="bg-black/90 text-center py-2 px-1">
+                <div className="text-white text-xs font-bold truncate">
+                  {champion.name}
+                </div>
+              </div>
             </>
           ) : (
-            <span className="text-gray-500 text-2xl font-light opacity-60">+</span>
+            <div className="flex-1 flex items-center justify-center">
+              <span className="text-gray-500 text-lg opacity-50">-</span>
+            </div>
           )}
         </div>
       );
     });
 
-    return <div className="grid grid-cols-5 gap-3">{slots}</div>;
+    return <div className="flex justify-center gap-2">{slots}</div>;
   };
 
   const renderBanSlots = (bans: string[], team: 'blue' | 'red') => {
