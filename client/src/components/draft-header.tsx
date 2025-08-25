@@ -42,7 +42,7 @@ export function DraftHeader({ draftSession, champions, timer, selectedChampion, 
       return (
         <div
           key={i}
-          className={`w-16 h-24 sm:w-20 sm:h-28 md:w-24 md:h-32 lg:w-28 lg:h-36 xl:w-32 xl:h-40 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
+          className={`w-20 h-24 sm:w-24 sm:h-28 md:w-28 md:h-32 lg:w-32 lg:h-36 xl:w-36 xl:h-40 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
             isActiveSlot 
               ? `border-lol-gold shadow-lg shadow-lol-gold/50 bg-lol-gold/10 animate-slow-pulse`
               : champion 
