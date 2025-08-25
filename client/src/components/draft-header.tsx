@@ -32,7 +32,7 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
       return (
         <div
           key={i}
-          className={`w-24 h-32 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
+          className={`w-32 h-40 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
             champion 
               ? `border-${team === 'blue' ? 'lol-blue' : 'lol-red'} shadow-xl` 
               : 'border-gray-600 bg-gray-700'
