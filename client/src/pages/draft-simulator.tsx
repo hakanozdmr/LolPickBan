@@ -175,48 +175,51 @@ export default function DraftSimulator() {
     const interval = setInterval(() => {
       setTimer((prevTimer) => {
         if (prevTimer <= 0) {
-          return prevTimer; // Don't go negative
+          return 0; // Stay at 0
         }
         
         const newTimer = prevTimer - 1;
         
         // Auto-action when timer reaches 0
         if (newTimer <= 0) {
-          const isBanPhase = draftSession.phase === 'ban1' || draftSession.phase === 'ban2';
-          const isPickPhase = draftSession.phase === 'pick1' || draftSession.phase === 'pick2';
-          
-          if (isBanPhase) {
-            // Auto-ban with empty ban if no champion selected
-            banChampionMutation.mutate(selectedChampion?.id || "");
+          // Use setTimeout to avoid dependency issues with mutations
+          setTimeout(() => {
+            const isBanPhase = draftSession.phase === 'ban1' || draftSession.phase === 'ban2';
+            const isPickPhase = draftSession.phase === 'pick1' || draftSession.phase === 'pick2';
             
-            const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
-            toast({
-              title: "Otomatik Ban",
-              description: selectedChampion 
-                ? `${selectedChampion.name} ${teamName} takım tarafından otomatik banlandı.`
-                : `${teamName} takım zaman aşımı nedeniyle boş ban yaptı.`,
-            });
-          } else if (isPickPhase) {
-            // Auto-pick with empty pick if no champion selected
-            if (selectedChampion) {
-              pickChampionMutation.mutate(selectedChampion.id);
+            if (isBanPhase) {
+              // Auto-ban with empty ban if no champion selected
+              banChampionMutation.mutate(selectedChampion?.id || "");
               
               const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
               toast({
-                title: "Otomatik Seçim",
-                description: `${selectedChampion.name} ${teamName} takım için otomatik seçildi.`,
+                title: "Otomatik Ban",
+                description: selectedChampion 
+                  ? `${selectedChampion.name} ${teamName} takım tarafından otomatik banlandı.`
+                  : `${teamName} takım zaman aşımı nedeniyle boş ban yaptı.`,
               });
-            } else {
-              // For picks, we still need to advance the phase even with no selection
-              pickChampionMutation.mutate("");
-              
-              const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
-              toast({
-                title: "Otomatik Seçim",
-                description: `${teamName} takım zaman aşımı nedeniyle şampiyon seçemedi.`,
-              });
+            } else if (isPickPhase) {
+              // Auto-pick with empty pick if no champion selected
+              if (selectedChampion) {
+                pickChampionMutation.mutate(selectedChampion.id);
+                
+                const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
+                toast({
+                  title: "Otomatik Seçim",
+                  description: `${selectedChampion.name} ${teamName} takım için otomatik seçildi.`,
+                });
+              } else {
+                // For picks, we still need to advance the phase even with no selection
+                pickChampionMutation.mutate("");
+                
+                const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
+                toast({
+                  title: "Otomatik Seçim",
+                  description: `${teamName} takım zaman aşımı nedeniyle şampiyon seçemedi.`,
+                });
+              }
             }
-          }
+          }, 100); // Small delay to avoid dependency conflicts
           
           return 0;
         }
@@ -226,7 +229,7 @@ export default function DraftSimulator() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [draftSession?.phase, draftSession?.currentTeam, draftSession?.phaseStep, selectedChampion, banChampionMutation, pickChampionMutation, toast]);
+  }, [draftSession?.phase, draftSession?.currentTeam, draftSession?.phaseStep]); // Removed mutation dependencies
 
   // Filter champions
   const filteredChampions = useMemo(() => {
