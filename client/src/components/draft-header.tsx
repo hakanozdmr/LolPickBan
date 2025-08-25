@@ -9,23 +9,12 @@ interface DraftHeaderProps {
   onVolumeChange?: (volume: number) => void;
 }
 
-const PHASE_NAMES: Record<string, string> = {
-  waiting: "DRAFT BAŞLAMADAN ÖNCE",
-  ban1: "BAN FAZΙ 1",
-  pick1: "SEÇİM FAZI 1", 
-  ban2: "BAN FAZI 2",
-  pick2: "SEÇİM FAZI 2",
-  completed: "DRAFT TAMAMLANDI",
-};
 
 export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: DraftHeaderProps) {
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const getChampionById = (id: string) => champions.find(c => c.id === id);
+
+  // Progress bar percentage (timer counts down from 30 to 0)
+  const progressPercentage = Math.max(0, Math.min(100, ((30 - timer) / 30) * 100));
 
   const renderPickSlots = (picks: string[], team: 'blue' | 'red') => {
     const slots = Array.from({ length: 5 }, (_, i) => {
@@ -96,6 +85,15 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
 
   return (
     <div className="lol-bg-darker border-b border-gray-700 px-6 py-4">
+      {/* Progress Bar */}
+      <div className="w-full h-2 bg-gray-700 mb-4">
+        <div 
+          className="h-full bg-lol-blue transition-all duration-1000 ease-linear"
+          style={{ width: `${progressPercentage}%` }}
+          data-testid="timer-progress-bar"
+        ></div>
+      </div>
+
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
@@ -104,14 +102,6 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
               Draft Simulator
             </h1>
             <AudioControl onVolumeChange={onVolumeChange} />
-          </div>
-          <div className="text-center">
-            <div className="lol-text-accent text-lg font-semibold" data-testid="draft-phase">
-              {PHASE_NAMES[draftSession.phase] || draftSession.phase.toUpperCase()}
-            </div>
-            <div className="text-2xl font-bold text-white" data-testid="draft-timer">
-              {formatTime(timer)}
-            </div>
           </div>
           <div className="text-right">
             <div className="text-sm lol-text-gray">Game 1 of 3</div>
