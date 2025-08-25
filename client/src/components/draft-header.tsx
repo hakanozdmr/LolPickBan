@@ -32,7 +32,7 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
       return (
         <div
           key={i}
-          className={`w-32 h-40 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
+          className={`w-64 h-80 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
             champion 
               ? `border-${team === 'blue' ? 'lol-blue' : 'lol-red'} shadow-xl` 
               : 'border-gray-600 bg-gray-700'
@@ -49,8 +49,8 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80"></div>
               </div>
-              <div className="bg-black/90 text-center py-2 px-1">
-                <div className="text-white text-xs font-bold truncate">
+              <div className="bg-black/90 text-center py-3 px-2">
+                <div className="text-white text-sm font-bold truncate">
                   {champion.name}
                 </div>
               </div>
@@ -64,7 +64,7 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
       );
     });
 
-    return <div className="flex justify-center gap-2">{slots}</div>;
+    return <div className="flex justify-center gap-4">{slots}</div>;
   };
 
   const renderBanSlots = (bans: string[], team: 'blue' | 'red') => {
