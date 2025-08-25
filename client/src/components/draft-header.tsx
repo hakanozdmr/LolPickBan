@@ -171,7 +171,7 @@ export function DraftHeader({
             className="text-xl sm:text-2xl font-bold lol-text-gold"
             data-testid="tournament-title"
           >
-            TURNUVA ADI*
+            {draftSession.tournamentName || "TURNUVA ADI*"}
           </h1>
         </div>
 
@@ -183,7 +183,7 @@ export function DraftHeader({
                 className="text-base sm:text-lg font-semibold lol-text-blue"
                 data-testid="blue-team-title"
               >
-                MAVİ TAKIM
+                {draftSession.blueTeamName || "MAVİ TAKIM"}
               </h2>
             </div>
             {renderPickSlots(draftSession.blueTeamPicks, "blue")}
@@ -213,7 +213,7 @@ export function DraftHeader({
                 className="text-base sm:text-lg font-semibold lol-text-red"
                 data-testid="red-team-title"
               >
-                KIRMIZI TAKIM
+                {draftSession.redTeamName || "KIRMIZI TAKIM"}
               </h2>
             </div>
             {renderPickSlots(draftSession.redTeamPicks, "red")}

@@ -269,6 +269,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
+      // Get tournament and team details
+      const tournament = await storage.getTournament(match.tournamentId);
+      const blueTeam = match.team1Id ? await storage.getTeam(match.team1Id) : null;
+      const redTeam = match.team2Id ? await storage.getTeam(match.team2Id) : null;
+
       const draftData = {
         phase: "waiting",
         currentTeam: "blue",
@@ -280,6 +285,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         redTeamBans: [],
         tournamentId: match.tournamentId,
         matchId: match.id,
+        tournamentName: tournament?.name || "Turnuva",
+        blueTeamName: blueTeam?.name || "Mavi Takım",
+        redTeamName: redTeam?.name || "Kırmızı Takım",
       };
 
       const validatedData = insertDraftSessionSchema.parse(draftData);

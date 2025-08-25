@@ -24,6 +24,9 @@ export const draftSessions = pgTable("draft_sessions", {
   redTeamBans: jsonb("red_team_bans").$type<string[]>().notNull().default([]),
   tournamentId: varchar("tournament_id"),
   matchId: varchar("match_id"),
+  tournamentName: text("tournament_name"),
+  blueTeamName: text("blue_team_name"),
+  redTeamName: text("red_team_name"),
 });
 
 export const tournaments = pgTable("tournaments", {

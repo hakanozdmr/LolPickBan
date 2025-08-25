@@ -150,7 +150,14 @@ export default function DraftSimulator() {
 
   // Initialize draft session
   useEffect(() => {
-    if (!draftSessionId) {
+    // Check URL for sessionId parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('sessionId');
+    
+    if (sessionId) {
+      setDraftSessionId(sessionId);
+      setShowStartModal(false);
+    } else if (!draftSessionId) {
       createDraftMutation.mutate();
     }
   }, []);
