@@ -4,7 +4,7 @@ import { queryClient } from "@/lib/queryClient";
 import { Champion, DraftSession } from "@shared/schema";
 import { NavigationHeader } from "@/components/navigation-header";
 import { DraftHeader } from "@/components/draft-header";
-import { FiltersPanel } from "@/components/filters-panel";
+import { CompactFilters } from "@/components/compact-filters";
 import { ChampionGrid } from "@/components/champion-grid";
 import { ActionBar } from "@/components/action-bar";
 import { DraftStartModal } from "@/components/draft-start-modal";
@@ -348,28 +348,24 @@ export default function DraftSimulator() {
       />
       
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="flex gap-6">
-          <FiltersPanel
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            selectedRoles={selectedRoles}
-            onRoleToggle={handleRoleToggle}
-            selectedClasses={selectedClasses}
-            onClassToggle={handleClassToggle}
-            onClearFilters={handleClearFilters}
-            champions={champions}
-            filteredChampions={filteredChampions}
-          />
-          
-          <ChampionGrid
-            champions={filteredChampions}
-            selectedChampion={selectedChampion}
-            onChampionSelect={setSelectedChampion}
-            bannedChampions={bannedChampions}
-            pickedChampions={pickedChampions}
-            onChampionHover={playHoverSound}
-          />
-        </div>
+        <CompactFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          selectedRoles={selectedRoles}
+          onRoleToggle={handleRoleToggle}
+          selectedClasses={selectedClasses}
+          onClassToggle={handleClassToggle}
+          onClearFilters={handleClearFilters}
+        />
+        
+        <ChampionGrid
+          champions={filteredChampions}
+          selectedChampion={selectedChampion}
+          onChampionSelect={setSelectedChampion}
+          bannedChampions={bannedChampions}
+          pickedChampions={pickedChampions}
+          onChampionHover={playHoverSound}
+        />
       </div>
 
       <ActionBar
