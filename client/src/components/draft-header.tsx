@@ -36,6 +36,9 @@ export function DraftHeader({ draftSession, champions, timer, selectedChampion, 
       const isCurrentTeamTurn = draftSession.currentTeam === team;
       const isActiveSlot = isPickPhase && isCurrentTeamTurn && !champion && i === picks.length;
       
+      // Check if this is an empty pick due to timeout
+      const isEmptyPick = i < picks.length && picks[i] === "";
+      
       // Show selected champion as preview in active slot
       const previewChampion = (isActiveSlot && selectedChampion) ? selectedChampion : champion;
       
@@ -47,7 +50,9 @@ export function DraftHeader({ draftSession, champions, timer, selectedChampion, 
               ? `border-lol-gold shadow-lg shadow-lol-gold/50 bg-lol-gold/10 animate-slow-pulse`
               : champion 
                 ? `border-${team === 'blue' ? 'lol-blue' : 'lol-red'} shadow-xl` 
-                : 'border-gray-600 bg-gray-700'
+                : isEmptyPick
+                  ? 'border-gray-800 bg-black'
+                  : 'border-gray-600 bg-gray-700'
           }`}
           data-testid={`${team}-pick-slot-${i}`}
         >
@@ -65,6 +70,10 @@ export function DraftHeader({ draftSession, champions, timer, selectedChampion, 
                 )}
               </div>
             </>
+          ) : isEmptyPick ? (
+            <div className="flex-1 flex items-center justify-center bg-black">
+              <span className="text-gray-600 text-sm opacity-75">ZAMAN AŞIMI</span>
+            </div>
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <span className="text-gray-500 text-lg opacity-50">-</span>
