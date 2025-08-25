@@ -1,6 +1,19 @@
-import { Map, TreePine, Star, Crosshair, Shield, UserX, Wand2, ShieldCheck, Sword, Zap, Heart, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { 
+  TopIcon, 
+  JungleIcon, 
+  MidIcon, 
+  AdcIcon, 
+  SupportIcon,
+  AssassinIcon,
+  MageIcon,
+  TankIcon,
+  FighterIcon,
+  MarksmanIcon,
+  SupportClassIcon
+} from "@/components/lol-icons";
 
 interface CompactFiltersProps {
   searchTerm: string;
@@ -13,20 +26,20 @@ interface CompactFiltersProps {
 }
 
 const ROLES = [
-  { id: 'Top', name: 'Üst Koridor', icon: Map },
-  { id: 'Jungle', name: 'Orman', icon: TreePine },
-  { id: 'Mid', name: 'Orta Koridor', icon: Star },
-  { id: 'ADC', name: 'Alt Koridor', icon: Crosshair },
-  { id: 'Support', name: 'Destek', icon: Shield },
+  { id: 'Top', name: 'Üst Koridor', icon: TopIcon },
+  { id: 'Jungle', name: 'Orman', icon: JungleIcon },
+  { id: 'Mid', name: 'Orta Koridor', icon: MidIcon },
+  { id: 'ADC', name: 'Alt Koridor', icon: AdcIcon },
+  { id: 'Support', name: 'Destek', icon: SupportIcon },
 ];
 
 const CLASSES = [
-  { id: 'Assassin', name: 'Suikastçı', icon: UserX },
-  { id: 'Mage', name: 'Büyücü', icon: Wand2 },
-  { id: 'Tank', name: 'Tank', icon: ShieldCheck },
-  { id: 'Fighter', name: 'Savaşçı', icon: Sword },
-  { id: 'Marksman', name: 'Nişancı', icon: Zap },
-  { id: 'Support', name: 'Destek', icon: Heart },
+  { id: 'Assassin', name: 'Suikastçı', icon: AssassinIcon },
+  { id: 'Mage', name: 'Büyücü', icon: MageIcon },
+  { id: 'Tank', name: 'Tank', icon: TankIcon },
+  { id: 'Fighter', name: 'Savaşçı', icon: FighterIcon },
+  { id: 'Marksman', name: 'Nişancı', icon: MarksmanIcon },
+  { id: 'Support', name: 'Destek', icon: SupportClassIcon },
 ];
 
 export function CompactFilters({
