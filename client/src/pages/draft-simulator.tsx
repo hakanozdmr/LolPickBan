@@ -103,7 +103,7 @@ export default function DraftSimulator() {
       if (!response.ok) throw new Error('Failed to ban champion');
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedSession) => {
       queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
       setSelectedChampion(null);
       // Play ban sound effect
@@ -123,7 +123,7 @@ export default function DraftSimulator() {
       if (!response.ok) throw new Error('Failed to pick champion');
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedSession) => {
       queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
       setSelectedChampion(null);
       // Play pick sound effect
@@ -168,12 +168,16 @@ export default function DraftSimulator() {
 
   // Countdown timer interval
   useEffect(() => {
-    if (!draftSession || draftSession.phase === 'waiting' || draftSession.phase === 'completed' || timer <= 0) {
+    if (!draftSession || draftSession.phase === 'waiting' || draftSession.phase === 'completed') {
       return;
     }
 
     const interval = setInterval(() => {
       setTimer((prevTimer) => {
+        if (prevTimer <= 0) {
+          return prevTimer; // Don't go negative
+        }
+        
         const newTimer = prevTimer - 1;
         
         // Auto-action when timer reaches 0
@@ -222,7 +226,7 @@ export default function DraftSimulator() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [draftSession, timer, selectedChampion, banChampionMutation, pickChampionMutation, toast]);
+  }, [draftSession?.phase, draftSession?.currentTeam, draftSession?.phaseStep, selectedChampion, banChampionMutation, pickChampionMutation, toast]);
 
   // Filter champions
   const filteredChampions = useMemo(() => {
