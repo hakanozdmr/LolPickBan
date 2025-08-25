@@ -55,6 +55,7 @@
   --lol-darker: hsl(205 20% 12%);
   --lol-blue: hsl(196 100% 25%);
   --lol-red: hsl(31 23% 60%);
+  --lol-true-red: hsl(0 80% 50%);
   --lol-gold: hsl(45 23% 70%);
   --lol-accent: hsl(190 84% 55%);
   --lol-gray: hsl(30 9% 65%);
@@ -136,6 +137,10 @@
 
 .lol-text-red {
   color: var(--lol-red);
+}
+
+.bg-lol-true-red {
+  background-color: var(--lol-true-red);
 }
 
 .lol-text-accent {

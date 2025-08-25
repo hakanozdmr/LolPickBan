@@ -13,12 +13,12 @@ interface DraftHeaderProps {
 export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: DraftHeaderProps) {
   const getChampionById = (id: string) => champions.find(c => c.id === id);
 
-  // Progress bar percentage (timer counts down from 30 to 0, so 100% to 0%)
+  // Progress bar percentage - starts at 100% and decreases to 0%
   const progressPercentage = Math.max(0, Math.min(100, (timer / 30) * 100));
   
-  // Determine active team color based on current turn
+  // Determine active team color based on current turn  
   const isBlueTeamTurn = draftSession.currentTeam === 'blue';
-  const progressBarColor = isBlueTeamTurn ? 'bg-lol-blue' : 'bg-lol-red';
+  const progressBarColor = isBlueTeamTurn ? 'bg-lol-blue' : 'bg-lol-true-red';
 
   const renderPickSlots = (picks: string[], team: 'blue' | 'red') => {
     const slots = Array.from({ length: 5 }, (_, i) => {
