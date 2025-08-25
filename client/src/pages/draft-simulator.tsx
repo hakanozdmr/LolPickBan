@@ -349,6 +349,7 @@ export default function DraftSimulator() {
         draftSession={draftSession} 
         champions={champions}
         timer={timer}
+        selectedChampion={selectedChampion}
         onVolumeChange={setGlobalVolume}
       />
       

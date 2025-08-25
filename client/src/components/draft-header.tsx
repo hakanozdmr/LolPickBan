@@ -6,11 +6,12 @@ interface DraftHeaderProps {
   draftSession: DraftSession;
   champions: Champion[];
   timer: number;
+  selectedChampion: Champion | null;
   onVolumeChange?: (volume: number) => void;
 }
 
 
-export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: DraftHeaderProps) {
+export function DraftHeader({ draftSession, champions, timer, selectedChampion, onVolumeChange }: DraftHeaderProps) {
   const getChampionById = (id: string) => champions.find(c => c.id === id);
   
   // Function to get loading screen image URL
@@ -35,6 +36,9 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
       const isCurrentTeamTurn = draftSession.currentTeam === team;
       const isActiveSlot = isPickPhase && isCurrentTeamTurn && !champion && i === picks.length;
       
+      // Show selected champion as preview in active slot
+      const previewChampion = (isActiveSlot && selectedChampion) ? selectedChampion : champion;
+      
       return (
         <div
           key={i}
@@ -47,19 +51,22 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
           }`}
           data-testid={`${team}-pick-slot-${i}`}
         >
-          {champion ? (
+          {previewChampion ? (
             <>
               <div className="flex-1 relative overflow-hidden">
                 <img 
-                  src={getLoadingScreenImage(champion)} 
-                  alt={champion.name}
-                  className="w-full h-full object-cover object-top"
+                  src={getLoadingScreenImage(previewChampion)} 
+                  alt={previewChampion.name}
+                  className={`w-full h-full object-cover object-top ${isActiveSlot && selectedChampion ? 'opacity-70' : ''}`}
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80"></div>
+                {isActiveSlot && selectedChampion && (
+                  <div className="absolute inset-0 border-2 border-lol-gold animate-pulse"></div>
+                )}
               </div>
               <div className="bg-black/90 text-center py-1 sm:py-2 px-1">
                 <div className="text-white text-xs sm:text-sm font-bold truncate">
-                  {champion.name}
+                  {previewChampion.name}
                 </div>
               </div>
             </>
@@ -84,6 +91,9 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
       const isCurrentTeamTurn = draftSession.currentTeam === team;
       const isActiveBanSlot = isBanPhase && isCurrentTeamTurn && !champion && i === bans.length;
       
+      // Show selected champion as preview in active ban slot
+      const previewChampion = (isActiveBanSlot && selectedChampion) ? selectedChampion : champion;
+      
       return (
         <div
           key={i}
@@ -96,15 +106,18 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
           }`}
           data-testid={`${team}-ban-slot-${i}`}
         >
-          {champion ? (
+          {previewChampion ? (
             <>
               <img 
-                src={champion.image} 
-                alt={champion.name}
-                className="w-full h-full object-cover grayscale"
+                src={previewChampion.image} 
+                alt={previewChampion.name}
+                className={`w-full h-full object-cover grayscale ${isActiveBanSlot && selectedChampion ? 'opacity-70' : ''}`}
               />
               <div className="absolute inset-0 bg-red-500/20"></div>
               <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-500 text-lg font-bold">✕</span>
+              {isActiveBanSlot && selectedChampion && (
+                <div className="absolute inset-0 border-2 border-red-400 animate-pulse"></div>
+              )}
             </>
           ) : (
             <span className="text-gray-500 text-xs">🚫</span>
