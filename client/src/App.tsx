@@ -10,7 +10,8 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={DraftSimulator}/>
+      <Route path="/" component={Tournaments}/>
+      <Route path="/draft-simulator" component={DraftSimulator}/>
       <Route path="/tournaments" component={Tournaments}/>
       <Route component={NotFound} />
     </Switch>
