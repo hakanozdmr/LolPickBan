@@ -32,7 +32,7 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
       return (
         <div
           key={i}
-          className={`w-24 h-36 sm:w-32 sm:h-44 md:w-40 md:h-52 lg:w-48 lg:h-64 xl:w-56 xl:h-72 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
+          className={`w-16 h-24 sm:w-20 sm:h-28 md:w-24 md:h-32 lg:w-28 lg:h-36 xl:w-32 xl:h-40 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
             champion 
               ? `border-${team === 'blue' ? 'lol-blue' : 'lol-red'} shadow-xl` 
               : 'border-gray-600 bg-gray-700'
@@ -49,8 +49,8 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80"></div>
               </div>
-              <div className="bg-black/90 text-center py-2 sm:py-3 px-2">
-                <div className="text-white text-xs sm:text-sm md:text-base font-bold truncate">
+              <div className="bg-black/90 text-center py-1 sm:py-2 px-1">
+                <div className="text-white text-xs sm:text-sm font-bold truncate">
                   {champion.name}
                 </div>
               </div>
@@ -64,7 +64,7 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
       );
     });
 
-    return <div className="flex justify-center gap-2 sm:gap-3 md:gap-4 lg:gap-5">{slots}</div>;
+    return <div className="flex justify-center gap-1 sm:gap-2 md:gap-3 lg:gap-4">{slots}</div>;
   };
 
   const renderBanSlots = (bans: string[], team: 'blue' | 'red') => {
