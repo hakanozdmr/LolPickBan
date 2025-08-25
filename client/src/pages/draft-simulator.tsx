@@ -283,6 +283,34 @@ export default function DraftSimulator() {
     setShowStartModal(true);
   };
 
+  // Handle automatic champion action when clicked
+  const handleChampionSelect = (champion: Champion) => {
+    if (!draftSession) return;
+    
+    // Check if it's a ban or pick phase
+    const isBanPhase = draftSession.phase === 'ban1' || draftSession.phase === 'ban2';
+    const isPickPhase = draftSession.phase === 'pick1' || draftSession.phase === 'pick2';
+    
+    const teamName = draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı';
+    
+    if (isBanPhase) {
+      banChampionMutation.mutate(champion.id);
+      toast({
+        title: "Şampiyon Banlandı",
+        description: `${champion.name} ${teamName} takım tarafından banlandı.`,
+      });
+    } else if (isPickPhase) {
+      pickChampionMutation.mutate(champion.id);
+      toast({
+        title: "Şampiyon Seçildi", 
+        description: `${champion.name} ${teamName} takım için seçildi.`,
+      });
+    } else {
+      // Just select the champion if not in active phase
+      setSelectedChampion(champion);
+    }
+  };
+
   const handlePickChampion = () => {
     if (!selectedChampion || !draftSession) return;
 
@@ -361,7 +389,7 @@ export default function DraftSimulator() {
         <ChampionGrid
           champions={filteredChampions}
           selectedChampion={selectedChampion}
-          onChampionSelect={setSelectedChampion}
+          onChampionSelect={handleChampionSelect}
           bannedChampions={bannedChampions}
           pickedChampions={pickedChampions}
           onChampionHover={playHoverSound}

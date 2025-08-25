@@ -29,13 +29,21 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
   const renderPickSlots = (picks: string[], team: 'blue' | 'red') => {
     const slots = Array.from({ length: 5 }, (_, i) => {
       const champion = picks[i] ? getChampionById(picks[i]) : null;
+      
+      // Check if this slot is currently active for picking
+      const isPickPhase = draftSession.phase === 'pick1' || draftSession.phase === 'pick2';
+      const isCurrentTeamTurn = draftSession.currentTeam === team;
+      const isActiveSlot = isPickPhase && isCurrentTeamTurn && !champion && i === picks.length;
+      
       return (
         <div
           key={i}
           className={`w-16 h-24 sm:w-20 sm:h-28 md:w-24 md:h-32 lg:w-28 lg:h-36 xl:w-32 xl:h-40 rounded border-2 flex flex-col relative overflow-hidden transition-all duration-300 ${
-            champion 
-              ? `border-${team === 'blue' ? 'lol-blue' : 'lol-red'} shadow-xl` 
-              : 'border-gray-600 bg-gray-700'
+            isActiveSlot 
+              ? `border-lol-gold shadow-lg shadow-lol-gold/50 animate-pulse bg-lol-gold/10`
+              : champion 
+                ? `border-${team === 'blue' ? 'lol-blue' : 'lol-red'} shadow-xl` 
+                : 'border-gray-600 bg-gray-700'
           }`}
           data-testid={`${team}-pick-slot-${i}`}
         >
@@ -70,13 +78,21 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
   const renderBanSlots = (bans: string[], team: 'blue' | 'red') => {
     const slots = Array.from({ length: 5 }, (_, i) => {
       const champion = bans[i] ? getChampionById(bans[i]) : null;
+      
+      // Check if this ban slot is currently active
+      const isBanPhase = draftSession.phase === 'ban1' || draftSession.phase === 'ban2';
+      const isCurrentTeamTurn = draftSession.currentTeam === team;
+      const isActiveBanSlot = isBanPhase && isCurrentTeamTurn && !champion && i === bans.length;
+      
       return (
         <div
           key={i}
-          className={`w-10 h-10 rounded border flex items-center justify-center relative overflow-hidden ${
-            champion 
-              ? 'bg-red-800/50 border-red-500' 
-              : 'bg-gray-800 border-gray-600'
+          className={`w-10 h-10 rounded border flex items-center justify-center relative overflow-hidden transition-all duration-300 ${
+            isActiveBanSlot
+              ? 'bg-red-500/30 border-red-400 shadow-lg shadow-red-400/50 animate-pulse'
+              : champion 
+                ? 'bg-red-800/50 border-red-500' 
+                : 'bg-gray-800 border-gray-600'
           }`}
           data-testid={`${team}-ban-slot-${i}`}
         >
