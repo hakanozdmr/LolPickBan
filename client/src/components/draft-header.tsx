@@ -12,6 +12,12 @@ interface DraftHeaderProps {
 
 export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: DraftHeaderProps) {
   const getChampionById = (id: string) => champions.find(c => c.id === id);
+  
+  // Function to get loading screen image URL
+  const getLoadingScreenImage = (champion: Champion) => {
+    const championName = champion.name.charAt(0).toUpperCase() + champion.name.slice(1);
+    return `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${championName}_0.jpg`;
+  };
 
   // Progress bar percentage - starts at 100% and decreases to 0%
   const progressPercentage = Math.max(0, Math.min(100, (timer / 30) * 100));
@@ -37,7 +43,7 @@ export function DraftHeader({ draftSession, champions, timer, onVolumeChange }: 
             <>
               <div className="flex-1 relative overflow-hidden">
                 <img 
-                  src={champion.image} 
+                  src={getLoadingScreenImage(champion)} 
                   alt={champion.name}
                   className="w-full h-full object-cover object-top"
                 />
