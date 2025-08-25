@@ -64,11 +64,6 @@ export function DraftHeader({ draftSession, champions, timer, selectedChampion, 
                   <div className="absolute inset-0 border-2 border-lol-gold animate-pulse"></div>
                 )}
               </div>
-              <div className="bg-black/90 text-center py-1 sm:py-2 px-1">
-                <div className="text-white text-xs sm:text-sm font-bold truncate">
-                  {previewChampion.name}
-                </div>
-              </div>
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center">
