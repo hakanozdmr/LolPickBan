@@ -179,10 +179,10 @@ export default function DraftSimulator() {
         description: "Tournament sayfasına yönlendiriliyorsunuz...",
       });
       
-      // Redirect after a short delay
+      // Redirect after 10 seconds
       setTimeout(() => {
         window.location.href = '/tournaments';
-      }, 2000);
+      }, 10000);
     }
   }, [draftSession?.phase, draftSession?.tournamentId]);
 
