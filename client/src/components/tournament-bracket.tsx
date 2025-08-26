@@ -3,9 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Play, Users, Plus, Gamepad2, Shield, Sword, Eye } from "lucide-react";
 import { useState } from "react";
 import { AddTeamModal } from "@/components/add-team-modal";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +26,8 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
   const { toast } = useToast();
   const [showAddTeamModal, setShowAddTeamModal] = useState(false);
   const [draftModalMatchId, setDraftModalMatchId] = useState<string | null>(null);
+  const [showTeamJoinModal, setShowTeamJoinModal] = useState(false);
+  const [selectedMatchForDraft, setSelectedMatchForDraft] = useState<string | null>(null);
 
   const addTeamMutation = useMutation({
     mutationFn: async (teamData: any) => {
@@ -396,6 +404,110 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
     );
   };
 
+  // Team Join Modal Component
+  const TeamJoinModal = ({ isOpen, onClose, matchId }: { isOpen: boolean; onClose: () => void; matchId: string }) => {
+    const teamJoinSchema = z.object({
+      blueTeamUserId: z.string().min(1, "Mavi takım kullanıcı ID'si gerekli"),
+      redTeamUserId: z.string().min(1, "Kırmızı takım kullanıcı ID'si gerekli"),
+    });
+
+    const form = useForm({
+      resolver: zodResolver(teamJoinSchema),
+      defaultValues: {
+        blueTeamUserId: "",
+        redTeamUserId: "",
+      },
+    });
+
+    const onSubmit = (values: z.infer<typeof teamJoinSchema>) => {
+      // Start the draft and redirect to draft simulator with team assignments
+      startDraftMutation.mutate(matchId, {
+        onSuccess: () => {
+          // Redirect to draft simulator with user assignments
+          const params = new URLSearchParams({
+            matchId,
+            blueUserId: values.blueTeamUserId,
+            redUserId: values.redTeamUserId,
+          });
+          window.location.href = `/draft-simulator?${params.toString()}`;
+        }
+      });
+      onClose();
+    };
+
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="lol-bg-darker border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="lol-text-gold">Takım Kullanıcıları Seç</DialogTitle>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="blueTeamUserId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="lol-text-blue">Mavi Takım Kullanıcı ID</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        className="lol-bg-dark border-gray-600 text-white"
+                        placeholder="Mavi takım kullanıcı ID'sini girin"
+                        data-testid="blue-team-user-id"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="redTeamUserId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="lol-text-red">Kırmızı Takım Kullanıcı ID</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        className="lol-bg-dark border-gray-600 text-white"
+                        placeholder="Kırmızı takım kullanıcı ID'sini girin"
+                        data-testid="red-team-user-id"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="flex gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="flex-1"
+                  data-testid="cancel-team-join"
+                >
+                  İptal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={startDraftMutation.isPending}
+                  className="flex-1 lol-bg-gold hover:lol-bg-accent text-black"
+                  data-testid="start-draft-with-teams"
+                >
+                  Draft Başlat
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   const canGenerateBracket = teams.length === tournament.maxTeams && matches.length === 0;
   const canAddMoreTeams = teams.length < tournament.maxTeams;
 
@@ -564,7 +676,10 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                 {match.status === 'pending' && team1 && team2 && (
                                   <Button 
                                     size="sm"
-                                    onClick={() => startDraftMutation.mutate(match.id)}
+                                    onClick={() => {
+                                      setSelectedMatchForDraft(match.id);
+                                      setShowTeamJoinModal(true);
+                                    }}
                                     disabled={startDraftMutation.isPending}
                                     className="lol-bg-gold hover:lol-bg-accent text-black text-xs"
                                     data-testid={`start-draft-${match.id}`}
@@ -628,6 +743,18 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
           matchId={draftModalMatchId}
           isOpen={!!draftModalMatchId}
           onClose={() => setDraftModalMatchId(null)}
+        />
+      )}
+
+      {/* Team Join Modal */}
+      {showTeamJoinModal && selectedMatchForDraft && (
+        <TeamJoinModal
+          isOpen={showTeamJoinModal}
+          onClose={() => {
+            setShowTeamJoinModal(false);
+            setSelectedMatchForDraft(null);
+          }}
+          matchId={selectedMatchForDraft}
         />
       )}
     </div>

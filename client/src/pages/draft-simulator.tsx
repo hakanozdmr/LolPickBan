@@ -22,6 +22,13 @@ const PHASE_DURATIONS = {
 
 export default function DraftSimulator() {
   const { toast } = useToast();
+  
+  // Parse URL parameters for match and user assignments
+  const urlParams = new URLSearchParams(window.location.search);
+  const matchId = urlParams.get('matchId');
+  const blueUserId = urlParams.get('blueUserId');
+  const redUserId = urlParams.get('redUserId');
+  
   const [globalVolume, setGlobalVolume] = useState(50);
   const [preferYouTube, setPreferYouTube] = useState(true);
   const { playDraftMusic, playPickSound, playBanSound, playHoverSound, stopAllSounds } = useAudio(globalVolume, preferYouTube);
@@ -31,17 +38,17 @@ export default function DraftSimulator() {
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [timer, setTimer] = useState(30);
   const [draftSessionId, setDraftSessionId] = useState<string | null>(null);
-  const [showStartModal, setShowStartModal] = useState(true);
+  const [showStartModal, setShowStartModal] = useState(!matchId); // Don't show modal if coming from tournament
 
   // Fetch champions
   const { data: champions = [], isLoading: championsLoading } = useQuery<Champion[]>({
     queryKey: ['/api/champions'],
   });
 
-  // Fetch draft session
+  // Fetch draft session by match ID if provided, otherwise by session ID
   const { data: draftSession, isLoading: draftLoading } = useQuery<DraftSession>({
-    queryKey: ['/api/draft-sessions', draftSessionId],
-    enabled: !!draftSessionId,
+    queryKey: matchId ? ['/api/matches', matchId, 'draft'] : ['/api/draft-sessions', draftSessionId],
+    enabled: !!matchId || !!draftSessionId,
   });
 
   // Create draft session mutation
@@ -73,8 +80,9 @@ export default function DraftSimulator() {
   // Start draft mutation
   const startDraftMutation = useMutation({
     mutationFn: async () => {
-      if (!draftSessionId) throw new Error('No draft session');
-      const response = await fetch(`/api/draft-sessions/${draftSessionId}/start`, {
+      const sessionId = draftSession?.id || draftSessionId;
+      if (!sessionId) throw new Error('No draft session');
+      const response = await fetch(`/api/draft-sessions/${sessionId}/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -82,7 +90,9 @@ export default function DraftSimulator() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
+      queryClient.invalidateQueries({ 
+        queryKey: matchId ? ['/api/matches', matchId, 'draft'] : ['/api/draft-sessions', draftSessionId] 
+      });
       toast({ title: "Draft Başladı!", description: "Ban fazı başlıyor..." });
       // Play epic draft music when starting
       playDraftMusic();
@@ -94,8 +104,9 @@ export default function DraftSimulator() {
   // Ban champion mutation
   const banChampionMutation = useMutation({
     mutationFn: async (championId: string) => {
-      if (!draftSessionId) throw new Error('No draft session');
-      const response = await fetch(`/api/draft-sessions/${draftSessionId}/ban`, {
+      const sessionId = draftSession?.id || draftSessionId;
+      if (!sessionId) throw new Error('No draft session');
+      const response = await fetch(`/api/draft-sessions/${sessionId}/ban`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ championId }),
@@ -104,7 +115,9 @@ export default function DraftSimulator() {
       return response.json();
     },
     onSuccess: (updatedSession) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
+      queryClient.invalidateQueries({ 
+        queryKey: matchId ? ['/api/matches', matchId, 'draft'] : ['/api/draft-sessions', draftSessionId] 
+      });
       setSelectedChampion(null);
       // Play ban sound effect
       playBanSound();
@@ -114,8 +127,9 @@ export default function DraftSimulator() {
   // Pick champion mutation
   const pickChampionMutation = useMutation({
     mutationFn: async (championId: string) => {
-      if (!draftSessionId) throw new Error('No draft session');
-      const response = await fetch(`/api/draft-sessions/${draftSessionId}/pick`, {
+      const sessionId = draftSession?.id || draftSessionId;
+      if (!sessionId) throw new Error('No draft session');
+      const response = await fetch(`/api/draft-sessions/${sessionId}/pick`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ championId }),
@@ -124,7 +138,9 @@ export default function DraftSimulator() {
       return response.json();
     },
     onSuccess: (updatedSession) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
+      queryClient.invalidateQueries({ 
+        queryKey: matchId ? ['/api/matches', matchId, 'draft'] : ['/api/draft-sessions', draftSessionId] 
+      });
       setSelectedChampion(null);
       // Play pick sound effect
       playPickSound();
@@ -151,11 +167,13 @@ export default function DraftSimulator() {
   // Initialize draft session
   useEffect(() => {
     // Check URL for sessionId parameter
-    const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('sessionId');
     
     if (sessionId) {
       setDraftSessionId(sessionId);
+      setShowStartModal(false);
+    } else if (matchId) {
+      // If coming from tournament, don't create new session, use the existing one
       setShowStartModal(false);
     } else if (!draftSessionId) {
       createDraftMutation.mutate();
@@ -181,7 +199,12 @@ export default function DraftSimulator() {
       
       // Redirect after 10 seconds
       setTimeout(() => {
-        window.location.href = '/tournaments';
+        if (matchId) {
+          // Go back to the specific tournament page
+          window.location.href = '/tournaments';
+        } else {
+          window.location.href = '/tournaments';
+        }
       }, 10000);
     }
   }, [draftSession?.phase, draftSession?.tournamentId]);
