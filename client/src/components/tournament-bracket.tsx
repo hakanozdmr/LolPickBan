@@ -270,15 +270,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto lol-bg-darker border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="lol-text-gold text-xl">
-              {draftSession.tournamentName} - Draft Detayları
-            </DialogTitle>
-            <div className="text-sm lol-text-gray">
-              {team1?.name} vs {team2?.name}
-            </div>
-          </DialogHeader>
-          
+          <DialogTitle className="sr-only">Draft Detayları</DialogTitle>
           <div className="space-y-6">
             {/* Teams Overview */}
             <div className="grid grid-cols-2 gap-6">
@@ -395,27 +387,6 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                       );
                     })}
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Draft Phase Info */}
-            <div className="lol-bg-dark rounded-lg p-4">
-              <h4 className="font-semibold text-white mb-2">Draft Durumu</h4>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="lol-text-gray">Fase:</span>
-                  <span className="ml-2 text-white capitalize">{draftSession.phase}</span>
-                </div>
-                <div>
-                  <span className="lol-text-gray">Aktif Takım:</span>
-                  <span className={`ml-2 capitalize ${draftSession.currentTeam === 'blue' ? 'lol-text-blue' : 'lol-text-red'}`}>
-                    {draftSession.currentTeam === 'blue' ? draftSession.blueTeamName : draftSession.redTeamName}
-                  </span>
-                </div>
-                <div>
-                  <span className="lol-text-gray">Adım:</span>
-                  <span className="ml-2 text-white">{draftSession.phaseStep}</span>
                 </div>
               </div>
             </div>
