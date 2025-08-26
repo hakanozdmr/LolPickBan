@@ -45,16 +45,19 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
       const rounds = Math.ceil(Math.log2(teams.length));
       const matchPromises = [];
 
+      // Shuffle teams randomly for fair matchups
+      const shuffledTeams = [...teams].sort(() => Math.random() - 0.5);
+
       // First round matches
-      for (let i = 0; i < teams.length; i += 2) {
-        if (teams[i + 1]) {
+      for (let i = 0; i < shuffledTeams.length; i += 2) {
+        if (shuffledTeams[i + 1]) {
           matchPromises.push(
             fetch(`/api/tournaments/${tournament.id}/matches`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                team1Id: teams[i].id,
-                team2Id: teams[i + 1].id,
+                team1Id: shuffledTeams[i].id,
+                team2Id: shuffledTeams[i + 1].id,
                 round: 1,
                 position: Math.floor(i / 2),
                 status: 'pending',
@@ -99,7 +102,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
     return teams.find(team => team.id === id);
   };
 
-  const canGenerateBracket = teams.length >= 2 && matches.length === 0;
+  const canGenerateBracket = teams.length === tournament.maxTeams && matches.length === 0;
   const canAddMoreTeams = teams.length < tournament.maxTeams;
 
   return (
@@ -128,6 +131,12 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
               <span>Format: {tournament.format === 'single_elimination' ? 'Eleme' : tournament.format}</span>
               <span>•</span>
               <span>{teams.length}/{tournament.maxTeams} Takım</span>
+              {teams.length < tournament.maxTeams && matches.length === 0 && (
+                <>
+                  <span>•</span>
+                  <span className="text-yellow-400">Bracket oluşturmak için {tournament.maxTeams - teams.length} takım daha gerekli</span>
+                </>
+              )}
             </div>
             
             <div className="flex items-center gap-2">
