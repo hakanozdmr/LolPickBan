@@ -260,6 +260,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get draft session by match ID
+  app.get("/api/matches/:matchId/draft", async (req, res) => {
+    try {
+      const draftSession = await storage.getDraftSessionByMatchId(req.params.matchId);
+      if (!draftSession) {
+        res.status(404).json({ message: "Draft session not found for this match" });
+        return;
+      }
+      res.json(draftSession);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch draft session" });
+    }
+  });
+
   // Start a draft from a tournament match
   app.post("/api/matches/:matchId/draft", async (req, res) => {
     try {

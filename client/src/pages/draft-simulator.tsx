@@ -170,6 +170,22 @@ export default function DraftSimulator() {
     }
   }, [draftSession, showStartModal]);
 
+  // Redirect to tournament page when draft is completed
+  useEffect(() => {
+    if (draftSession && draftSession.phase === 'completed' && draftSession.tournamentId) {
+      // Show completion message
+      toast({
+        title: "Draft Tamamlandı!",
+        description: "Tournament sayfasına yönlendiriliyorsunuz...",
+      });
+      
+      // Redirect after a short delay
+      setTimeout(() => {
+        window.location.href = '/tournaments';
+      }, 2000);
+    }
+  }, [draftSession?.phase, draftSession?.tournamentId]);
+
   // Timer logic - countdown functionality
   useEffect(() => {
     if (!draftSession || draftSession.phase === 'waiting' || draftSession.phase === 'completed') {

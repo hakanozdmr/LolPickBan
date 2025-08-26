@@ -1,11 +1,11 @@
-import { Tournament, Team, Match } from "@shared/schema";
+import { Tournament, Team, Match, DraftSession, Champion } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Play, Users, Plus, Gamepad2 } from "lucide-react";
+import { Play, Users, Plus, Gamepad2, Shield, Sword } from "lucide-react";
 import { useState } from "react";
 import { AddTeamModal } from "@/components/add-team-modal";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -124,6 +124,114 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
   const getTeamById = (id: string | null) => {
     if (!id) return null;
     return teams.find(team => team.id === id);
+  };
+
+  // Component to display draft results
+  const DraftResults = ({ matchId }: { matchId: string }) => {
+    const { data: draftSession } = useQuery<DraftSession | null>({
+      queryKey: ['/api/matches', matchId, 'draft'],
+    });
+
+    const { data: champions = [] } = useQuery<Champion[]>({
+      queryKey: ['/api/champions'],
+    });
+
+    if (!draftSession || !champions.length) return null;
+
+    const getChampionById = (id: string) => champions.find(c => c.id === id);
+
+    return (
+      <div className="mt-3 pt-3 border-t border-gray-600">
+        <div className="text-xs lol-text-gray mb-2">Draft Sonuçları:</div>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {/* Blue Team */}
+          <div>
+            <div className="lol-text-blue mb-1 font-semibold">{draftSession.blueTeamName}</div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <Sword className="w-3 h-3 lol-text-gold" />
+                <span className="lol-text-gray">Picks:</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {draftSession.blueTeamPicks.map((championId, index) => {
+                  const champion = getChampionById(championId);
+                  return champion ? (
+                    <img
+                      key={`blue-pick-${index}`}
+                      src={champion.image}
+                      alt={champion.name}
+                      className="w-6 h-6 rounded border border-blue-500"
+                      title={champion.name}
+                    />
+                  ) : null;
+                })}
+              </div>
+              <div className="flex items-center gap-1 mt-2">
+                <Shield className="w-3 h-3 lol-text-red" />
+                <span className="lol-text-gray">Bans:</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {draftSession.blueTeamBans.map((championId, index) => {
+                  const champion = getChampionById(championId);
+                  return champion ? (
+                    <img
+                      key={`blue-ban-${index}`}
+                      src={champion.image}
+                      alt={champion.name}
+                      className="w-4 h-4 rounded border border-red-500 opacity-60"
+                      title={`${champion.name} (Banned)`}
+                    />
+                  ) : null;
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Red Team */}
+          <div>
+            <div className="lol-text-red mb-1 font-semibold">{draftSession.redTeamName}</div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <Sword className="w-3 h-3 lol-text-gold" />
+                <span className="lol-text-gray">Picks:</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {draftSession.redTeamPicks.map((championId, index) => {
+                  const champion = getChampionById(championId);
+                  return champion ? (
+                    <img
+                      key={`red-pick-${index}`}
+                      src={champion.image}
+                      alt={champion.name}
+                      className="w-6 h-6 rounded border border-red-500"
+                      title={champion.name}
+                    />
+                  ) : null;
+                })}
+              </div>
+              <div className="flex items-center gap-1 mt-2">
+                <Shield className="w-3 h-3 lol-text-red" />
+                <span className="lol-text-gray">Bans:</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {draftSession.redTeamBans.map((championId, index) => {
+                  const champion = getChampionById(championId);
+                  return champion ? (
+                    <img
+                      key={`red-ban-${index}`}
+                      src={champion.image}
+                      alt={champion.name}
+                      className="w-4 h-4 rounded border border-red-500 opacity-60"
+                      title={`${champion.name} (Banned)`}
+                    />
+                  ) : null;
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const canGenerateBracket = teams.length === tournament.maxTeams && matches.length === 0;
@@ -329,6 +437,11 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                 )}
                               </div>
                             </div>
+
+                            {/* Show draft results for completed matches */}
+                            {match.status === 'completed' && (
+                              <DraftResults matchId={match.id} />
+                            )}
                           </div>
                         );
                       })}

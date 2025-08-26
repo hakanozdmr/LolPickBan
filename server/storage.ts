@@ -9,6 +9,7 @@ export interface IStorage {
   
   // Draft Sessions
   getDraftSession(id: string): Promise<DraftSession | undefined>;
+  getDraftSessionByMatchId(matchId: string): Promise<DraftSession | undefined>;
   createDraftSession(session: InsertDraftSession): Promise<DraftSession>;
   updateDraftSession(id: string, updates: Partial<DraftSession>): Promise<DraftSession | undefined>;
   startDraft(id: string): Promise<DraftSession | undefined>;
@@ -65,6 +66,11 @@ export class MemStorage implements IStorage {
 
   async getDraftSession(id: string): Promise<DraftSession | undefined> {
     return this.draftSessions.get(id);
+  }
+
+  async getDraftSessionByMatchId(matchId: string): Promise<DraftSession | undefined> {
+    const sessions = Array.from(this.draftSessions.values());
+    return sessions.find(session => session.matchId === matchId);
   }
 
   async createDraftSession(session: InsertDraftSession): Promise<DraftSession> {
