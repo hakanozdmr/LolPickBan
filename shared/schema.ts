@@ -1,10 +1,30 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, jsonb, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, jsonb, timestamp, integer, boolean, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User roles enum
-export const userRoleEnum = pgEnum('user_role', ['admin', 'user']);
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table for Replit Auth
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  role: text("role").notNull().default("user"), // user, moderator, admin
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 export const champions = pgTable("champions", {
   id: varchar("id").primaryKey(),
@@ -30,6 +50,11 @@ export const draftSessions = pgTable("draft_sessions", {
   tournamentName: text("tournament_name"),
   blueTeamName: text("blue_team_name"),
   redTeamName: text("red_team_name"),
+  blueTeamCode: varchar("blue_team_code").unique(),
+  redTeamCode: varchar("red_team_code").unique(),
+  blueTeamJoined: boolean("blue_team_joined").default(false),
+  redTeamJoined: boolean("red_team_joined").default(false),
+  createdBy: varchar("created_by"), // User ID who created the session
 });
 
 export const tournaments = pgTable("tournaments", {
@@ -39,6 +64,7 @@ export const tournaments = pgTable("tournaments", {
   format: text("format").notNull().default("single_elimination"), // single_elimination, double_elimination, round_robin
   maxTeams: integer("max_teams").notNull().default(8),
   status: text("status").notNull().default("setup"), // setup, in_progress, completed
+  createdBy: varchar("created_by"), // User ID who created the tournament
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
@@ -65,28 +91,9 @@ export const matches = pgTable("matches", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
-// Users table
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: varchar("username").notNull().unique(),
-  email: varchar("email").unique(),
-  role: userRoleEnum("role").notNull().default("user"),
-  createdAt: timestamp("created_at").notNull().default(sql`now()`),
-  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
-});
-
-// Tournament participation tokens
-export const tournamentTokens = pgTable("tournament_tokens", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  token: varchar("token").notNull().unique(),
-  tournamentId: varchar("tournament_id").notNull(),
-  matchId: varchar("match_id"),
-  teamSide: text("team_side"), // 'blue' or 'red'
-  userId: varchar("user_id"),
-  isUsed: integer("is_used").notNull().default(0), // 0 = false, 1 = true
-  expiresAt: timestamp("expires_at"),
-  createdAt: timestamp("created_at").notNull().default(sql`now()`),
-});
+// Auth schemas
+export type UpsertUser = typeof users.$inferInsert;
+export type User = typeof users.$inferSelect;
 
 export const insertChampionSchema = createInsertSchema(champions);
 export const insertDraftSessionSchema = createInsertSchema(draftSessions).omit({
@@ -105,15 +112,6 @@ export const insertMatchSchema = createInsertSchema(matches).omit({
   id: true,
   createdAt: true,
 });
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-export const insertTournamentTokenSchema = createInsertSchema(tournamentTokens).omit({
-  id: true,
-  createdAt: true,
-});
 
 export type Champion = typeof champions.$inferSelect;
 export type InsertChampion = z.infer<typeof insertChampionSchema>;
@@ -125,7 +123,3 @@ export type Team = typeof teams.$inferSelect;
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type Match = typeof matches.$inferSelect;
 export type InsertMatch = z.infer<typeof insertMatchSchema>;
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type TournamentToken = typeof tournamentTokens.$inferSelect;
-export type InsertTournamentToken = z.infer<typeof insertTournamentTokenSchema>;

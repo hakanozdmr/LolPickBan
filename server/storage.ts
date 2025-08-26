@@ -1,9 +1,33 @@
-import { type Champion, type DraftSession, type InsertDraftSession, type Tournament, type Team, type Match, type InsertTournament, type InsertTeam, type InsertMatch, type User, type InsertUser, type TournamentToken, type InsertTournamentToken } from "@shared/schema";
+import { 
+  type Champion, 
+  type DraftSession, 
+  type InsertDraftSession, 
+  type Tournament, 
+  type Team, 
+  type Match, 
+  type User,
+  type UpsertUser,
+  type InsertTournament, 
+  type InsertTeam, 
+  type InsertMatch,
+  champions,
+  draftSessions,
+  tournaments,
+  teams,
+  matches,
+  users,
+} from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 
 export interface IStorage {
+  // User operations (required for Replit Auth)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  
   // Champions
   getChampions(): Promise<Champion[]>;
   
@@ -36,21 +60,6 @@ export interface IStorage {
   createMatch(match: InsertMatch): Promise<Match>;
   updateMatch(id: string, updates: Partial<Match>): Promise<Match | undefined>;
   deleteMatch(id: string): Promise<boolean>;
-  
-  // Users
-  getUsers(): Promise<User[]>;
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
-  deleteUser(id: string): Promise<boolean>;
-  
-  // Tournament Tokens
-  getTournamentTokens(tournamentId?: string): Promise<TournamentToken[]>;
-  getTournamentToken(token: string): Promise<TournamentToken | undefined>;
-  createTournamentToken(token: InsertTournamentToken): Promise<TournamentToken>;
-  useTournamentToken(token: string, userId: string): Promise<TournamentToken | undefined>;
-  deleteTournamentToken(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -60,10 +69,30 @@ export class MemStorage implements IStorage {
   private teams: Map<string, Team> = new Map();
   private matches: Map<string, Match> = new Map();
   private users: Map<string, User> = new Map();
-  private tournamentTokens: Map<string, TournamentToken> = new Map();
 
   constructor() {
     this.loadChampions();
+  }
+
+  // User operations (required for Replit Auth)
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const existingUser = this.users.get(userData.id!);
+    const user: User = {
+      id: userData.id!,
+      email: userData.email || null,
+      firstName: userData.firstName || null,
+      lastName: userData.lastName || null,
+      profileImageUrl: userData.profileImageUrl || null,
+      role: existingUser?.role || "user",
+      createdAt: existingUser?.createdAt || new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(userData.id!, user);
+    return user;
   }
 
   private loadChampions() {
@@ -92,6 +121,9 @@ export class MemStorage implements IStorage {
 
   async createDraftSession(session: InsertDraftSession): Promise<DraftSession> {
     const id = randomUUID();
+    const blueTeamCode = randomUUID().substring(0, 8).toUpperCase();
+    const redTeamCode = randomUUID().substring(0, 8).toUpperCase();
+    
     const newSession: DraftSession = {
       id,
       phase: session.phase || "waiting",
@@ -107,6 +139,11 @@ export class MemStorage implements IStorage {
       tournamentName: session.tournamentName || null,
       blueTeamName: session.blueTeamName || null,
       redTeamName: session.redTeamName || null,
+      blueTeamCode,
+      redTeamCode,
+      blueTeamJoined: false,
+      redTeamJoined: false,
+      createdBy: session.createdBy || null,
     };
     this.draftSessions.set(id, newSession);
     return newSession;
@@ -303,6 +340,7 @@ export class MemStorage implements IStorage {
       format: tournament.format || "single_elimination",
       maxTeams: tournament.maxTeams || 8,
       status: tournament.status || "setup",
+      createdBy: tournament.createdBy || null,
       createdAt: now,
       updatedAt: now,
     };
@@ -402,98 +440,229 @@ export class MemStorage implements IStorage {
   async deleteMatch(id: string): Promise<boolean> {
     return this.matches.delete(id);
   }
+}
 
-  // User methods
-  async getUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+// Database Storage Implementation
+export class DatabaseStorage implements IStorage {
+  constructor() {
+    this.initializeData();
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
-  }
-
-  async createUser(user: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const now = new Date();
-    const newUser: User = {
-      id,
-      username: user.username,
-      email: user.email || null,
-      role: user.role || "user",
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.users.set(id, newUser);
-    return newUser;
-  }
-
-  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-
-    const updatedUser = { 
-      ...user, 
-      ...updates, 
-      updatedAt: new Date() 
-    };
-    this.users.set(id, updatedUser);
-    return updatedUser;
-  }
-
-  async deleteUser(id: string): Promise<boolean> {
-    return this.users.delete(id);
-  }
-
-  // Tournament Token methods
-  async getTournamentTokens(tournamentId?: string): Promise<TournamentToken[]> {
-    const tokens = Array.from(this.tournamentTokens.values());
-    if (tournamentId) {
-      return tokens.filter(token => token.tournamentId === tournamentId);
+  private async initializeData() {
+    // Load champions data into database if empty
+    try {
+      const championCount = await db.$count(champions);
+      if (championCount === 0) {
+        const championsPath = path.join(process.cwd(), "server", "data", "champions.json");
+        const championsData = fs.readFileSync(championsPath, "utf-8");
+        const championsList = JSON.parse(championsData);
+        
+        if (championsList.length > 0) {
+          await db.insert(champions).values(championsList);
+          console.log(`Loaded ${championsList.length} champions into database`);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to initialize champions data:", error);
     }
-    return tokens;
   }
 
-  async getTournamentToken(token: string): Promise<TournamentToken | undefined> {
-    return Array.from(this.tournamentTokens.values()).find(t => t.token === token);
+  // User operations (required for Replit Auth)
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
-  async createTournamentToken(token: InsertTournamentToken): Promise<TournamentToken> {
-    const id = randomUUID();
-    const newToken: TournamentToken = {
-      id,
-      token: token.token,
-      tournamentId: token.tournamentId,
-      matchId: token.matchId || null,
-      teamSide: token.teamSide || null,
-      userId: token.userId || null,
-      isUsed: token.isUsed || 0,
-      expiresAt: token.expiresAt || null,
-      createdAt: new Date(),
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  async getChampions(): Promise<Champion[]> {
+    return await db.select().from(champions);
+  }
+
+  async getDraftSession(id: string): Promise<DraftSession | undefined> {
+    const [session] = await db.select().from(draftSessions).where(eq(draftSessions.id, id));
+    return session;
+  }
+
+  async getDraftSessionByMatchId(matchId: string): Promise<DraftSession | undefined> {
+    const [session] = await db.select().from(draftSessions).where(eq(draftSessions.matchId, matchId));
+    return session;
+  }
+
+  async createDraftSession(session: InsertDraftSession): Promise<DraftSession> {
+    // Generate team codes for draft session
+    const blueTeamCode = randomUUID().substring(0, 8).toUpperCase();
+    const redTeamCode = randomUUID().substring(0, 8).toUpperCase();
+    
+    const sessionData = {
+      ...session,
+      blueTeamCode,
+      redTeamCode,
+      blueTeamJoined: false,
+      redTeamJoined: false,
     };
-    this.tournamentTokens.set(id, newToken);
-    return newToken;
+    
+    const [newSession] = await db
+      .insert(draftSessions)
+      .values(sessionData)
+      .returning();
+    return newSession;
   }
 
-  async useTournamentToken(token: string, userId: string): Promise<TournamentToken | undefined> {
-    const tournamentToken = await this.getTournamentToken(token);
-    if (!tournamentToken) return undefined;
-
-    const updatedToken = {
-      ...tournamentToken,
-      userId,
-      isUsed: 1,
-    };
-    this.tournamentTokens.set(tournamentToken.id, updatedToken);
-    return updatedToken;
+  async updateDraftSession(id: string, updates: Partial<DraftSession>): Promise<DraftSession | undefined> {
+    const [updated] = await db
+      .update(draftSessions)
+      .set(updates)
+      .where(eq(draftSessions.id, id))
+      .returning();
+    return updated;
   }
 
-  async deleteTournamentToken(id: string): Promise<boolean> {
-    return this.tournamentTokens.delete(id);
+  async startDraft(id: string): Promise<DraftSession | undefined> {
+    return this.updateDraftSession(id, { phase: "ban_phase_1" });
+  }
+
+  async banChampion(id: string, championId: string): Promise<DraftSession | undefined> {
+    const session = await this.getDraftSession(id);
+    if (!session) return undefined;
+
+    let updates: Partial<DraftSession> = {};
+
+    if (session.currentTeam === "blue") {
+      const newBans = [...session.blueTeamBans, championId];
+      updates.blueTeamBans = newBans;
+    } else {
+      const newBans = [...session.redTeamBans, championId];
+      updates.redTeamBans = newBans;
+    }
+
+    // Update phase and team logic here
+    updates.currentTeam = session.currentTeam === "blue" ? "red" : "blue";
+
+    return this.updateDraftSession(id, updates);
+  }
+
+  async pickChampion(id: string, championId: string): Promise<DraftSession | undefined> {
+    const session = await this.getDraftSession(id);
+    if (!session) return undefined;
+
+    let updates: Partial<DraftSession> = {};
+
+    if (session.currentTeam === "blue") {
+      const newPicks = [...session.blueTeamPicks, championId];
+      updates.blueTeamPicks = newPicks;
+    } else {
+      const newPicks = [...session.redTeamPicks, championId];
+      updates.redTeamPicks = newPicks;
+    }
+
+    // Check if draft is complete
+    const totalPicks = session.blueTeamPicks.length + session.redTeamPicks.length + 1;
+    if (totalPicks >= 10) {
+      updates.phase = "completed";
+    } else {
+      updates.currentTeam = session.currentTeam === "blue" ? "red" : "blue";
+    }
+
+    return this.updateDraftSession(id, updates);
+  }
+
+  async getTournaments(): Promise<Tournament[]> {
+    return await db.select().from(tournaments);
+  }
+
+  async getTournament(id: string): Promise<Tournament | undefined> {
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, id));
+    return tournament;
+  }
+
+  async createTournament(tournament: InsertTournament): Promise<Tournament> {
+    const [newTournament] = await db.insert(tournaments).values(tournament).returning();
+    return newTournament;
+  }
+
+  async updateTournament(id: string, updates: Partial<Tournament>): Promise<Tournament | undefined> {
+    const [updated] = await db
+      .update(tournaments)
+      .set({...updates, updatedAt: new Date()})
+      .where(eq(tournaments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteTournament(id: string): Promise<boolean> {
+    const result = await db.delete(tournaments).where(eq(tournaments.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getTeams(tournamentId: string): Promise<Team[]> {
+    return await db.select().from(teams).where(eq(teams.tournamentId, tournamentId));
+  }
+
+  async getTeam(id: string): Promise<Team | undefined> {
+    const [team] = await db.select().from(teams).where(eq(teams.id, id));
+    return team;
+  }
+
+  async createTeam(team: InsertTeam): Promise<Team> {
+    const [newTeam] = await db.insert(teams).values(team).returning();
+    return newTeam;
+  }
+
+  async updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined> {
+    const [updated] = await db
+      .update(teams)
+      .set(updates)
+      .where(eq(teams.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteTeam(id: string): Promise<boolean> {
+    const result = await db.delete(teams).where(eq(teams.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getMatches(tournamentId: string): Promise<Match[]> {
+    return await db.select().from(matches).where(eq(matches.tournamentId, tournamentId));
+  }
+
+  async getMatch(id: string): Promise<Match | undefined> {
+    const [match] = await db.select().from(matches).where(eq(matches.id, id));
+    return match;
+  }
+
+  async createMatch(match: InsertMatch): Promise<Match> {
+    const [newMatch] = await db.insert(matches).values(match).returning();
+    return newMatch;
+  }
+
+  async updateMatch(id: string, updates: Partial<Match>): Promise<Match | undefined> {
+    const [updated] = await db
+      .update(matches)
+      .set(updates)
+      .where(eq(matches.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteMatch(id: string): Promise<boolean> {
+    const result = await db.delete(matches).where(eq(matches.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

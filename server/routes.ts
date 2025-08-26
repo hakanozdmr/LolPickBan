@@ -1,11 +1,26 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertDraftSessionSchema, insertTournamentSchema, insertTeamSchema, insertMatchSchema, insertUserSchema, insertTournamentTokenSchema } from "@shared/schema";
+import { setupAuth, isAuthenticated, isAdminOrModerator } from "./replitAuth";
+import { insertDraftSessionSchema, insertTournamentSchema, insertTeamSchema, insertMatchSchema, type DraftSession } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
+  // Auth middleware
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   // Get all champions
   app.get("/api/champions", async (req, res) => {
     try {
@@ -16,10 +31,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create new draft session
-  app.post("/api/draft-sessions", async (req, res) => {
+  // Create new draft session (Admin/Moderator only)
+  app.post("/api/draft-sessions", isAuthenticated, isAdminOrModerator, async (req: any, res) => {
     try {
-      const validatedData = insertDraftSessionSchema.parse(req.body);
+      const userId = req.user.claims.sub;
+      const validatedData = insertDraftSessionSchema.parse({
+        ...req.body,
+        createdBy: userId,
+      });
       const session = await storage.createDraftSession(validatedData);
       res.status(201).json(session);
     } catch (error) {
@@ -105,6 +124,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(session);
     } catch (error) {
       res.status(500).json({ message: "Failed to pick champion" });
+    }
+  });
+
+  // Join draft session with team code
+  app.post("/api/draft-sessions/:id/join", async (req, res) => {
+    try {
+      const { teamCode } = req.body;
+      
+      if (!teamCode) {
+        res.status(400).json({ message: "Team code is required" });
+        return;
+      }
+
+      const session = await storage.getDraftSession(req.params.id);
+      if (!session) {
+        res.status(404).json({ message: "Draft session not found" });
+        return;
+      }
+
+      let updates: Partial<DraftSession> = {};
+      let team: 'blue' | 'red' | null = null;
+
+      // Check if team code matches blue or red team
+      if (session.blueTeamCode === teamCode && !session.blueTeamJoined) {
+        updates.blueTeamJoined = true;
+        team = 'blue';
+      } else if (session.redTeamCode === teamCode && !session.redTeamJoined) {
+        updates.redTeamJoined = true;
+        team = 'red';
+      } else if (session.blueTeamCode === teamCode && session.blueTeamJoined) {
+        res.status(400).json({ message: "Blue team already joined" });
+        return;
+      } else if (session.redTeamCode === teamCode && session.redTeamJoined) {
+        res.status(400).json({ message: "Red team already joined" });
+        return;
+      } else {
+        res.status(400).json({ message: "Invalid team code" });
+        return;
+      }
+
+      // Check if both teams are now joined and start draft
+      const updatedSession = await storage.updateDraftSession(req.params.id, updates);
+      if (updatedSession && updatedSession.blueTeamJoined && updatedSession.redTeamJoined && updatedSession.phase === 'waiting') {
+        // Start the draft automatically when both teams join
+        await storage.updateDraftSession(req.params.id, { phase: 'ban1' });
+      }
+
+      res.json({ message: `Successfully joined as ${team} team`, team });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to join draft session" });
+    }
+  });
+
+  // Get team codes for admin/moderator (for display purposes)
+  app.get("/api/draft-sessions/:id/codes", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || (user.role !== 'admin' && user.role !== 'moderator')) {
+        res.status(403).json({ message: "Insufficient permissions" });
+        return;
+      }
+
+      const session = await storage.getDraftSession(req.params.id);
+      if (!session) {
+        res.status(404).json({ message: "Draft session not found" });
+        return;
+      }
+
+      res.json({
+        blueTeamCode: session.blueTeamCode,
+        redTeamCode: session.redTeamCode,
+        blueTeamJoined: session.blueTeamJoined,
+        redTeamJoined: session.redTeamJoined
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get team codes" });
     }
   });
 
@@ -317,126 +414,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ message: "Failed to create draft from match" });
       }
-    }
-  });
-
-  // User routes
-  app.get("/api/users", async (req, res) => {
-    try {
-      const users = await storage.getUsers();
-      res.json(users);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch users" });
-    }
-  });
-
-  app.post("/api/users", async (req, res) => {
-    try {
-      const validatedData = insertUserSchema.parse(req.body);
-      const user = await storage.createUser(validatedData);
-      res.status(201).json(user);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid data", errors: error.errors });
-      } else {
-        res.status(500).json({ message: "Failed to create user" });
-      }
-    }
-  });
-
-  app.get("/api/users/:id", async (req, res) => {
-    try {
-      const user = await storage.getUser(req.params.id);
-      if (!user) {
-        res.status(404).json({ message: "User not found" });
-        return;
-      }
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  app.get("/api/users/username/:username", async (req, res) => {
-    try {
-      const user = await storage.getUserByUsername(req.params.username);
-      if (!user) {
-        res.status(404).json({ message: "User not found" });
-        return;
-      }
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  // Tournament Token routes
-  app.get("/api/tournament-tokens", async (req, res) => {
-    try {
-      const tournamentId = req.query.tournamentId as string | undefined;
-      const tokens = await storage.getTournamentTokens(tournamentId);
-      res.json(tokens);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch tournament tokens" });
-    }
-  });
-
-  app.post("/api/tournament-tokens", async (req, res) => {
-    try {
-      const validatedData = insertTournamentTokenSchema.parse(req.body);
-      const token = await storage.createTournamentToken(validatedData);
-      res.status(201).json(token);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid data", errors: error.errors });
-      } else {
-        res.status(500).json({ message: "Failed to create tournament token" });
-      }
-    }
-  });
-
-  app.get("/api/tournament-tokens/:token", async (req, res) => {
-    try {
-      const token = await storage.getTournamentToken(req.params.token);
-      if (!token) {
-        res.status(404).json({ message: "Tournament token not found" });
-        return;
-      }
-      res.json(token);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch tournament token" });
-    }
-  });
-
-  app.post("/api/tournament-tokens/:token/use", async (req, res) => {
-    try {
-      const { userId } = req.body;
-      if (!userId) {
-        res.status(400).json({ message: "User ID is required" });
-        return;
-      }
-      
-      const usedToken = await storage.useTournamentToken(req.params.token, userId);
-      if (!usedToken) {
-        res.status(404).json({ message: "Tournament token not found" });
-        return;
-      }
-      res.json(usedToken);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to use tournament token" });
-    }
-  });
-
-  app.delete("/api/tournament-tokens/:id", async (req, res) => {
-    try {
-      const deleted = await storage.deleteTournamentToken(req.params.id);
-      if (!deleted) {
-        res.status(404).json({ message: "Tournament token not found" });
-        return;
-      }
-      res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ message: "Failed to delete tournament token" });
     }
   });
 

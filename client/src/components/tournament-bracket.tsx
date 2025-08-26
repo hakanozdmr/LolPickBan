@@ -1,18 +1,11 @@
 import { Tournament, Team, Match, DraftSession, Champion } from "@shared/schema";
-import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Play, Users, Plus, Gamepad2, Shield, Sword, Eye } from "lucide-react";
 import { useState } from "react";
 import { AddTeamModal } from "@/components/add-team-modal";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -25,13 +18,8 @@ interface TournamentBracketProps {
 
 export function TournamentBracket({ tournament, teams, matches }: TournamentBracketProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [showAddTeamModal, setShowAddTeamModal] = useState(false);
   const [draftModalMatchId, setDraftModalMatchId] = useState<string | null>(null);
-  const [showTeamJoinModal, setShowTeamJoinModal] = useState(false);
-  const [selectedMatchForDraft, setSelectedMatchForDraft] = useState<string | null>(null);
-
-  const isAdmin = user?.role === 'admin';
 
   const addTeamMutation = useMutation({
     mutationFn: async (teamData: any) => {
@@ -408,185 +396,6 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
     );
   };
 
-  // Team Join Modal Component
-  const TeamJoinModal = ({ isOpen, onClose, matchId }: { isOpen: boolean; onClose: () => void; matchId: string }) => {
-    const teamJoinSchema = z.object({
-      blueTeamToken: z.string().min(1, "Mavi takım token'ı gerekli"),
-      redTeamToken: z.string().min(1, "Kırmızı takım token'ı gerekli"),
-    });
-
-    const form = useForm({
-      resolver: zodResolver(teamJoinSchema),
-      defaultValues: {
-        blueTeamToken: "",
-        redTeamToken: "",
-      },
-    });
-
-    const validateAndStartDraft = async (values: z.infer<typeof teamJoinSchema>) => {
-      try {
-        // Admin can start without token validation
-        if (isAdmin) {
-          startDraftMutation.mutate(matchId, {
-            onSuccess: () => {
-              window.location.href = `/draft-simulator?matchId=${matchId}`;
-            }
-          });
-          onClose();
-          return;
-        }
-
-        // Validate tokens for regular users
-        const [blueTokenResponse, redTokenResponse] = await Promise.all([
-          fetch(`/api/tournament-tokens/${values.blueTeamToken}`),
-          fetch(`/api/tournament-tokens/${values.redTeamToken}`)
-        ]);
-
-        if (!blueTokenResponse.ok || !redTokenResponse.ok) {
-          toast({
-            title: "Hata",
-            description: "Geçersiz token'lar. Lütfen doğru token'ları girin.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const [blueToken, redToken] = await Promise.all([
-          blueTokenResponse.json(),
-          redTokenResponse.json()
-        ]);
-
-        // Check if tokens are valid for this tournament and match
-        if (blueToken.tournamentId !== tournament.id || redToken.tournamentId !== tournament.id) {
-          toast({
-            title: "Hata",
-            description: "Token'lar bu turnuva için geçerli değil.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Use tokens and start draft
-        await Promise.all([
-          fetch(`/api/tournament-tokens/${values.blueTeamToken}/use`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user!.id }),
-          }),
-          fetch(`/api/tournament-tokens/${values.redTeamToken}/use`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user!.id }),
-          })
-        ]);
-
-        startDraftMutation.mutate(matchId, {
-          onSuccess: () => {
-            window.location.href = `/draft-simulator?matchId=${matchId}`;
-          }
-        });
-        onClose();
-
-      } catch (error) {
-        toast({
-          title: "Hata",
-          description: "Draft başlatılırken bir hata oluştu.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    const onSubmit = (values: z.infer<typeof teamJoinSchema>) => {
-      validateAndStartDraft(values);
-    };
-
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="bg-slate-900/90 border-yellow-600/20">
-          <DialogHeader>
-            <DialogTitle className="text-yellow-400">
-              {isAdmin ? "Draft Başlat" : "Takım Token'larını Girin"}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {!isAdmin && (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="blueTeamToken"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-blue-400">Mavi Takım Token'ı</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            className="bg-slate-800/50 border-slate-600 text-white"
-                            placeholder="Mavi takım token'ını girin"
-                            data-testid="blue-team-token"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="redTeamToken"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-red-400">Kırmızı Takım Token'ı</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            className="bg-slate-800/50 border-slate-600 text-white"
-                            placeholder="Kırmızı takım token'ını girin"
-                            data-testid="red-team-token"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </>
-              )}
-              
-              {isAdmin && (
-                <div className="text-center p-4 bg-slate-800/30 rounded-lg">
-                  <p className="text-slate-300 text-sm">
-                    Admin olarak token'a ihtiyacınız yok. Direkt draft başlatabilirsiniz.
-                  </p>
-                </div>
-              )}
-              
-              <div className="flex gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  className="flex-1"
-                  data-testid="cancel-team-join"
-                >
-                  İptal
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={startDraftMutation.isPending}
-                  className="flex-1 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 text-black font-semibold"
-                  data-testid="start-draft-with-teams"
-                >
-                  {startDraftMutation.isPending ? "Başlatılıyor..." : "Draft Başlat"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    );
-  };
-
   const canGenerateBracket = teams.length === tournament.maxTeams && matches.length === 0;
   const canAddMoreTeams = teams.length < tournament.maxTeams;
 
@@ -755,12 +564,9 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                 {match.status === 'pending' && team1 && team2 && (
                                   <Button 
                                     size="sm"
-                                    onClick={() => {
-                                      setSelectedMatchForDraft(match.id);
-                                      setShowTeamJoinModal(true);
-                                    }}
+                                    onClick={() => startDraftMutation.mutate(match.id)}
                                     disabled={startDraftMutation.isPending}
-                                    className="bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 text-black text-xs font-semibold"
+                                    className="lol-bg-gold hover:lol-bg-accent text-black text-xs"
                                     data-testid={`start-draft-${match.id}`}
                                   >
                                     <Play className="w-3 h-3 mr-1" />
@@ -768,9 +574,9 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                   </Button>
                                 )}
 
-                                {match.status === 'in_progress' && !match.winnerId && team1 && team2 && isAdmin && (
+                                {match.status === 'in_progress' && !match.winnerId && team1 && team2 && (
                                   <div className="space-y-1">
-                                    <div className="text-xs text-gray-400 mb-1">Kazanan:</div>
+                                    <div className="text-xs lol-text-gray mb-1">Kazanan:</div>
                                     <Button 
                                       size="sm"
                                       onClick={() => setWinnerMutation.mutate({ matchId: match.id, winnerId: team1.id })}
@@ -822,18 +628,6 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
           matchId={draftModalMatchId}
           isOpen={!!draftModalMatchId}
           onClose={() => setDraftModalMatchId(null)}
-        />
-      )}
-
-      {/* Team Join Modal */}
-      {showTeamJoinModal && selectedMatchForDraft && (
-        <TeamJoinModal
-          isOpen={showTeamJoinModal}
-          onClose={() => {
-            setShowTeamJoinModal(false);
-            setSelectedMatchForDraft(null);
-          }}
-          matchId={selectedMatchForDraft}
         />
       )}
     </div>
