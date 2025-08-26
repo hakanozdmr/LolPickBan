@@ -9,6 +9,7 @@ import { ChampionGrid } from "@/components/champion-grid";
 import { ActionBar } from "@/components/action-bar";
 import { DraftStartModal } from "@/components/draft-start-modal";
 import { TeamCodesModal } from "../components/team-codes-modal";
+import { TeamJoinModal } from "../components/team-join-modal";
 import { useToast } from "@/hooks/use-toast";
 import { useAudio } from "@/hooks/use-audio";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,7 +38,9 @@ export default function DraftSimulator() {
   const [draftSessionId, setDraftSessionId] = useState<string | null>(null);
   const [showStartModal, setShowStartModal] = useState(false);
   const [showTeamCodesModal, setShowTeamCodesModal] = useState(false);
+  const [showTeamJoinModal, setShowTeamJoinModal] = useState(false);
   const [teamCodes, setTeamCodes] = useState<{ blueTeamCode?: string; redTeamCode?: string } | null>(null);
+  const [userTeam, setUserTeam] = useState<'blue' | 'red' | null>(null);
 
   // Fetch champions
   const { data: champions = [], isLoading: championsLoading } = useQuery<Champion[]>({
@@ -405,19 +408,41 @@ export default function DraftSimulator() {
   // Check if user can start draft sessions
   const canStartDraft = user && (user.role === 'admin' || user.role === 'moderator');
 
-  // If no draft session exists and user can't create one, show message
+  // If no draft session exists and user can't create one, show join option
   if (!draftSession && !canStartDraft) {
     return (
-      <div className="min-h-screen lol-bg-dark text-white flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold mb-4">No Active Draft Session</h2>
-          <p className="text-gray-400 mb-6">
-            There is no active draft session. Only admins and moderators can create new draft sessions.
-          </p>
-          <p className="text-sm text-gray-500">
-            Ask an admin or moderator to start a draft session for you to participate.
-          </p>
+      <div className="min-h-screen lol-bg-dark text-white font-inter">
+        <NavigationHeader />
+        
+        <div className="flex items-center justify-center min-h-[70vh]">
+          <div className="text-center max-w-md">
+            <h2 className="text-3xl font-bold mb-4">Join Draft Session</h2>
+            <p className="text-gray-400 mb-8">
+              Enter your team access code to join an active draft session.
+            </p>
+            <button 
+              onClick={() => setShowTeamJoinModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-lg font-semibold transition-colors"
+              data-testid="button-join-draft"
+            >
+              Enter Team Code
+            </button>
+            <p className="text-sm text-gray-500 mt-6">
+              Don't have a team code? Ask an admin or moderator to create a draft session.
+            </p>
+          </div>
         </div>
+
+        <TeamJoinModal
+          open={showTeamJoinModal}
+          onOpenChange={setShowTeamJoinModal}
+          draftSessionId={draftSessionId || ""}
+          onJoinSuccess={(team) => {
+            setUserTeam(team);
+            // Refetch draft session after joining
+            window.location.reload();
+          }}
+        />
       </div>
     );
   }
@@ -535,6 +560,16 @@ export default function DraftSimulator() {
           redTeamCode={teamCodes.redTeamCode!}
         />
       )}
+
+      <TeamJoinModal
+        open={showTeamJoinModal}
+        onOpenChange={setShowTeamJoinModal}
+        draftSessionId={draftSessionId || ""}
+        onJoinSuccess={(team) => {
+          setUserTeam(team);
+          queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
+        }}
+      />
       
       {/* Add bottom padding to prevent content from being hidden behind action bar */}
       <div className="h-20"></div>

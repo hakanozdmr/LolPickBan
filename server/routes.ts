@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdminOrModerator } from "./replitAuth";
-import { insertDraftSessionSchema, insertTournamentSchema, insertTeamSchema, insertMatchSchema } from "@shared/schema";
+import { insertDraftSessionSchema, insertTournamentSchema, insertTeamSchema, insertMatchSchema, type DraftSession } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -124,6 +124,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(session);
     } catch (error) {
       res.status(500).json({ message: "Failed to pick champion" });
+    }
+  });
+
+  // Join draft session with team code
+  app.post("/api/draft-sessions/:id/join", async (req, res) => {
+    try {
+      const { teamCode } = req.body;
+      
+      if (!teamCode) {
+        res.status(400).json({ message: "Team code is required" });
+        return;
+      }
+
+      const session = await storage.getDraftSession(req.params.id);
+      if (!session) {
+        res.status(404).json({ message: "Draft session not found" });
+        return;
+      }
+
+      let updates: Partial<DraftSession> = {};
+      let team: 'blue' | 'red' | null = null;
+
+      // Check if team code matches blue or red team
+      if (session.blueTeamCode === teamCode && !session.blueTeamJoined) {
+        updates.blueTeamJoined = true;
+        team = 'blue';
+      } else if (session.redTeamCode === teamCode && !session.redTeamJoined) {
+        updates.redTeamJoined = true;
+        team = 'red';
+      } else if (session.blueTeamCode === teamCode && session.blueTeamJoined) {
+        res.status(400).json({ message: "Blue team already joined" });
+        return;
+      } else if (session.redTeamCode === teamCode && session.redTeamJoined) {
+        res.status(400).json({ message: "Red team already joined" });
+        return;
+      } else {
+        res.status(400).json({ message: "Invalid team code" });
+        return;
+      }
+
+      // Check if both teams are now joined and start draft
+      const updatedSession = await storage.updateDraftSession(req.params.id, updates);
+      if (updatedSession && updatedSession.blueTeamJoined && updatedSession.redTeamJoined && updatedSession.phase === 'waiting') {
+        // Start the draft automatically when both teams join
+        await storage.updateDraftSession(req.params.id, { phase: 'ban1' });
+      }
+
+      res.json({ message: `Successfully joined as ${team} team`, team });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to join draft session" });
+    }
+  });
+
+  // Get team codes for admin/moderator (for display purposes)
+  app.get("/api/draft-sessions/:id/codes", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || (user.role !== 'admin' && user.role !== 'moderator')) {
+        res.status(403).json({ message: "Insufficient permissions" });
+        return;
+      }
+
+      const session = await storage.getDraftSession(req.params.id);
+      if (!session) {
+        res.status(404).json({ message: "Draft session not found" });
+        return;
+      }
+
+      res.json({
+        blueTeamCode: session.blueTeamCode,
+        redTeamCode: session.redTeamCode,
+        blueTeamJoined: session.blueTeamJoined,
+        redTeamJoined: session.redTeamJoined
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get team codes" });
     }
   });
 
