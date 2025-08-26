@@ -75,12 +75,15 @@ export class MemStorage implements IStorage {
       currentTeam: session.currentTeam || "blue",
       timer: session.timer || "30",
       phaseStep: session.phaseStep || "0",
-      blueTeamPicks: Array.isArray(session.blueTeamPicks) ? session.blueTeamPicks : [],
-      redTeamPicks: Array.isArray(session.redTeamPicks) ? session.redTeamPicks : [],
-      blueTeamBans: Array.isArray(session.blueTeamBans) ? session.blueTeamBans : [],
-      redTeamBans: Array.isArray(session.redTeamBans) ? session.redTeamBans : [],
+      blueTeamPicks: Array.isArray(session.blueTeamPicks) ? [...session.blueTeamPicks] : [],
+      redTeamPicks: Array.isArray(session.redTeamPicks) ? [...session.redTeamPicks] : [],
+      blueTeamBans: Array.isArray(session.blueTeamBans) ? [...session.blueTeamBans] : [],
+      redTeamBans: Array.isArray(session.redTeamBans) ? [...session.redTeamBans] : [],
       tournamentId: session.tournamentId || null,
       matchId: session.matchId || null,
+      tournamentName: session.tournamentName || null,
+      blueTeamName: session.blueTeamName || null,
+      redTeamName: session.redTeamName || null,
     };
     this.draftSessions.set(id, newSession);
     return newSession;
