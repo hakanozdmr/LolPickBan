@@ -8,8 +8,11 @@ import { CompactFilters } from "@/components/compact-filters";
 import { ChampionGrid } from "@/components/champion-grid";
 import { ActionBar } from "@/components/action-bar";
 import { DraftStartModal } from "@/components/draft-start-modal";
+import { TeamCodesModal } from "../components/team-codes-modal";
 import { useToast } from "@/hooks/use-toast";
 import { useAudio } from "@/hooks/use-audio";
+import { useAuth } from "@/hooks/useAuth";
+import { isUnauthorizedError } from "@/lib/authUtils";
 
 const PHASE_DURATIONS = {
   waiting: 0,
@@ -22,6 +25,7 @@ const PHASE_DURATIONS = {
 
 export default function DraftSimulator() {
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
   const [globalVolume, setGlobalVolume] = useState(50);
   const [preferYouTube, setPreferYouTube] = useState(true);
   const { playDraftMusic, playPickSound, playBanSound, playHoverSound, stopAllSounds } = useAudio(globalVolume, preferYouTube);
@@ -31,7 +35,9 @@ export default function DraftSimulator() {
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [timer, setTimer] = useState(30);
   const [draftSessionId, setDraftSessionId] = useState<string | null>(null);
-  const [showStartModal, setShowStartModal] = useState(true);
+  const [showStartModal, setShowStartModal] = useState(false);
+  const [showTeamCodesModal, setShowTeamCodesModal] = useState(false);
+  const [teamCodes, setTeamCodes] = useState<{ blueTeamCode?: string; redTeamCode?: string } | null>(null);
 
   // Fetch champions
   const { data: champions = [], isLoading: championsLoading } = useQuery<Champion[]>({
@@ -61,12 +67,49 @@ export default function DraftSimulator() {
           redTeamBans: [],
         }),
       });
-      if (!response.ok) throw new Error('Failed to create draft session');
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('401: Unauthorized');
+        } else if (response.status === 403) {
+          throw new Error('403: Insufficient permissions');
+        }
+        throw new Error('Failed to create draft session');
+      }
       return response.json();
     },
     onSuccess: (data: DraftSession) => {
       setDraftSessionId(data.id);
+      setTeamCodes({
+        blueTeamCode: data.blueTeamCode || undefined,
+        redTeamCode: data.redTeamCode || undefined,
+      });
+      setShowTeamCodesModal(true);
       queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions'] });
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      } else if (error.message.includes('403')) {
+        toast({
+          title: "Access Denied", 
+          description: "Only admins and moderators can create draft sessions.",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -353,10 +396,86 @@ export default function DraftSimulator() {
     setSelectedClasses([]);
   };
 
-  if (championsLoading || draftLoading || !draftSession) {
+  // If not authenticated, redirect to home
+  if (!isAuthenticated) {
+    window.location.href = '/';
+    return null;
+  }
+
+  // Check if user can start draft sessions
+  const canStartDraft = user && (user.role === 'admin' || user.role === 'moderator');
+
+  // If no draft session exists and user can't create one, show message
+  if (!draftSession && !canStartDraft) {
+    return (
+      <div className="min-h-screen lol-bg-dark text-white flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-bold mb-4">No Active Draft Session</h2>
+          <p className="text-gray-400 mb-6">
+            There is no active draft session. Only admins and moderators can create new draft sessions.
+          </p>
+          <p className="text-sm text-gray-500">
+            Ask an admin or moderator to start a draft session for you to participate.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (championsLoading || (draftSessionId && draftLoading)) {
     return (
       <div className="min-h-screen lol-bg-dark flex items-center justify-center">
         <div className="text-white text-xl">Loading Draft Simulator...</div>
+      </div>
+    );
+  }
+
+  // If no draft session and user can create one, show loading or start modal
+  if (!draftSession && canStartDraft) {
+    return (
+      <div className="min-h-screen lol-bg-dark text-white font-inter">
+        <NavigationHeader />
+        
+        <div className="flex items-center justify-center min-h-[70vh]">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold mb-4">Create New Draft Session</h2>
+            <p className="text-gray-400 mb-8">
+              Start a new champion draft session with team access codes.
+            </p>
+            <button 
+              onClick={() => setShowStartModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-lg font-semibold transition-colors"
+              data-testid="button-start-draft"
+            >
+              Create Draft Session
+            </button>
+          </div>
+        </div>
+
+        <DraftStartModal
+          isOpen={showStartModal}
+          onClose={() => setShowStartModal(false)}
+          onStartDraft={() => createDraftMutation.mutate()}
+          isLoading={createDraftMutation.isPending}
+        />
+
+        {teamCodes && (
+          <TeamCodesModal
+            open={showTeamCodesModal}
+            onOpenChange={setShowTeamCodesModal}
+            blueTeamCode={teamCodes.blueTeamCode!}
+            redTeamCode={teamCodes.redTeamCode!}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // If we have a draft session, render the full draft interface
+  if (!draftSession) {
+    return (
+      <div className="min-h-screen lol-bg-dark flex items-center justify-center">
+        <div className="text-white text-xl">Loading Draft Session...</div>
       </div>
     );
   }
@@ -407,6 +526,15 @@ export default function DraftSimulator() {
         onStartDraft={handleStartDraft}
         isLoading={startDraftMutation.isPending}
       />
+
+      {teamCodes && (
+        <TeamCodesModal
+          open={showTeamCodesModal}
+          onOpenChange={setShowTeamCodesModal}
+          blueTeamCode={teamCodes.blueTeamCode!}
+          redTeamCode={teamCodes.redTeamCode!}
+        />
+      )}
       
       {/* Add bottom padding to prevent content from being hidden behind action bar */}
       <div className="h-20"></div>

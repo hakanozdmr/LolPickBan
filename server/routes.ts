@@ -1,11 +1,26 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { setupAuth, isAuthenticated, isAdminOrModerator } from "./replitAuth";
 import { insertDraftSessionSchema, insertTournamentSchema, insertTeamSchema, insertMatchSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
+  // Auth middleware
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   // Get all champions
   app.get("/api/champions", async (req, res) => {
     try {
@@ -16,10 +31,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create new draft session
-  app.post("/api/draft-sessions", async (req, res) => {
+  // Create new draft session (Admin/Moderator only)
+  app.post("/api/draft-sessions", isAuthenticated, isAdminOrModerator, async (req: any, res) => {
     try {
-      const validatedData = insertDraftSessionSchema.parse(req.body);
+      const userId = req.user.claims.sub;
+      const validatedData = insertDraftSessionSchema.parse({
+        ...req.body,
+        createdBy: userId,
+      });
       const session = await storage.createDraftSession(validatedData);
       res.status(201).json(session);
     } catch (error) {
