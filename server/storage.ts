@@ -1,4 +1,4 @@
-import { type Champion, type DraftSession, type InsertDraftSession, type Tournament, type Team, type Match, type InsertTournament, type InsertTeam, type InsertMatch } from "@shared/schema";
+import { type Champion, type DraftSession, type InsertDraftSession, type Tournament, type Team, type Match, type InsertTournament, type InsertTeam, type InsertMatch, type User, type InsertUser, type TournamentToken, type InsertTournamentToken } from "@shared/schema";
 import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
@@ -36,6 +36,21 @@ export interface IStorage {
   createMatch(match: InsertMatch): Promise<Match>;
   updateMatch(id: string, updates: Partial<Match>): Promise<Match | undefined>;
   deleteMatch(id: string): Promise<boolean>;
+  
+  // Users
+  getUsers(): Promise<User[]>;
+  getUser(id: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
+  
+  // Tournament Tokens
+  getTournamentTokens(tournamentId?: string): Promise<TournamentToken[]>;
+  getTournamentToken(token: string): Promise<TournamentToken | undefined>;
+  createTournamentToken(token: InsertTournamentToken): Promise<TournamentToken>;
+  useTournamentToken(token: string, userId: string): Promise<TournamentToken | undefined>;
+  deleteTournamentToken(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -44,6 +59,8 @@ export class MemStorage implements IStorage {
   private tournaments: Map<string, Tournament> = new Map();
   private teams: Map<string, Team> = new Map();
   private matches: Map<string, Match> = new Map();
+  private users: Map<string, User> = new Map();
+  private tournamentTokens: Map<string, TournamentToken> = new Map();
 
   constructor() {
     this.loadChampions();
@@ -384,6 +401,98 @@ export class MemStorage implements IStorage {
 
   async deleteMatch(id: string): Promise<boolean> {
     return this.matches.delete(id);
+  }
+
+  // User methods
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.username === username);
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const id = randomUUID();
+    const now = new Date();
+    const newUser: User = {
+      id,
+      username: user.username,
+      email: user.email || null,
+      role: user.role || "user",
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.users.set(id, newUser);
+    return newUser;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+
+    const updatedUser = { 
+      ...user, 
+      ...updates, 
+      updatedAt: new Date() 
+    };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    return this.users.delete(id);
+  }
+
+  // Tournament Token methods
+  async getTournamentTokens(tournamentId?: string): Promise<TournamentToken[]> {
+    const tokens = Array.from(this.tournamentTokens.values());
+    if (tournamentId) {
+      return tokens.filter(token => token.tournamentId === tournamentId);
+    }
+    return tokens;
+  }
+
+  async getTournamentToken(token: string): Promise<TournamentToken | undefined> {
+    return Array.from(this.tournamentTokens.values()).find(t => t.token === token);
+  }
+
+  async createTournamentToken(token: InsertTournamentToken): Promise<TournamentToken> {
+    const id = randomUUID();
+    const newToken: TournamentToken = {
+      id,
+      token: token.token,
+      tournamentId: token.tournamentId,
+      matchId: token.matchId || null,
+      teamSide: token.teamSide || null,
+      userId: token.userId || null,
+      isUsed: token.isUsed || 0,
+      expiresAt: token.expiresAt || null,
+      createdAt: new Date(),
+    };
+    this.tournamentTokens.set(id, newToken);
+    return newToken;
+  }
+
+  async useTournamentToken(token: string, userId: string): Promise<TournamentToken | undefined> {
+    const tournamentToken = await this.getTournamentToken(token);
+    if (!tournamentToken) return undefined;
+
+    const updatedToken = {
+      ...tournamentToken,
+      userId,
+      isUsed: 1,
+    };
+    this.tournamentTokens.set(tournamentToken.id, updatedToken);
+    return updatedToken;
+  }
+
+  async deleteTournamentToken(id: string): Promise<boolean> {
+    return this.tournamentTokens.delete(id);
   }
 }
 
