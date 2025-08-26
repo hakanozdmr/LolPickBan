@@ -97,6 +97,30 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
     },
   });
 
+  const setWinnerMutation = useMutation({
+    mutationFn: async ({ matchId, winnerId }: { matchId: string; winnerId: string }) => {
+      const response = await fetch(`/api/matches/${matchId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          winnerId,
+          status: 'completed',
+          completedAt: new Date().toISOString()
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to set winner');
+      return response.json();
+    },
+    onSuccess: (updatedMatch) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', tournament.id, 'matches'] });
+      const winner = getTeamById(updatedMatch.winnerId);
+      toast({
+        title: "Kazanan Belirlendi",
+        description: `${winner?.name} maçı kazandı!`,
+      });
+    },
+  });
+
   const getTeamById = (id: string | null) => {
     if (!id) return null;
     return teams.find(team => team.id === id);
@@ -278,6 +302,30 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                     <Play className="w-3 h-3 mr-1" />
                                     Draft Başlat
                                   </Button>
+                                )}
+
+                                {match.status === 'in_progress' && !match.winnerId && team1 && team2 && (
+                                  <div className="space-y-1">
+                                    <div className="text-xs lol-text-gray mb-1">Kazanan:</div>
+                                    <Button 
+                                      size="sm"
+                                      onClick={() => setWinnerMutation.mutate({ matchId: match.id, winnerId: team1.id })}
+                                      disabled={setWinnerMutation.isPending}
+                                      className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                                      data-testid={`set-winner-team1-${match.id}`}
+                                    >
+                                      {team1.name}
+                                    </Button>
+                                    <Button 
+                                      size="sm"
+                                      onClick={() => setWinnerMutation.mutate({ matchId: match.id, winnerId: team2.id })}
+                                      disabled={setWinnerMutation.isPending}
+                                      className="w-full text-xs bg-red-600 hover:bg-red-700 text-white"
+                                      data-testid={`set-winner-team2-${match.id}`}
+                                    >
+                                      {team2.name}
+                                    </Button>
+                                  </div>
                                 )}
                               </div>
                             </div>

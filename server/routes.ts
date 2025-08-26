@@ -292,6 +292,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = insertDraftSessionSchema.parse(draftData);
       const session = await storage.createDraftSession(validatedData);
+      
+      // Update match status to in_progress when draft is started
+      await storage.updateMatch(req.params.matchId, { status: 'in_progress' });
+      
       res.status(201).json(session);
     } catch (error) {
       if (error instanceof z.ZodError) {
