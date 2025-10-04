@@ -125,7 +125,7 @@ export function CreateTournamentModal({ isOpen, onClose, onCreateTournament, isL
               variant="outline"
               onClick={handleClose}
               disabled={isLoading}
-              className="flex-1 border-gray-600 text-white hover:text-white hover:lol-bg-dark"
+              className="flex-1 border-gray-600 hover:text-white hover:lol-bg-dark text-[#000000]"
               data-testid="cancel-tournament-button"
             >
               İptal
