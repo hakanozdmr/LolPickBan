@@ -91,10 +91,10 @@ export function CreateTournamentModal({ isOpen, onClose, onCreateTournament, isL
               <SelectTrigger className="lol-bg-dark border-gray-600 text-white">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="lol-bg-dark border-gray-600">
-                <SelectItem value="single_elimination">Eleme</SelectItem>
-                <SelectItem value="double_elimination">Çifte Eleme</SelectItem>
-                <SelectItem value="round_robin">Lig Usulü</SelectItem>
+              <SelectContent className="lol-bg-dark border-gray-600 text-white">
+                <SelectItem value="single_elimination" className="text-white">Eleme</SelectItem>
+                <SelectItem value="double_elimination" className="text-white">Çifte Eleme</SelectItem>
+                <SelectItem value="round_robin" className="text-white">Lig Usulü</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -110,11 +110,11 @@ export function CreateTournamentModal({ isOpen, onClose, onCreateTournament, isL
               <SelectTrigger className="lol-bg-dark border-gray-600 text-white">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="lol-bg-dark border-gray-600">
-                <SelectItem value="4">4 Takım</SelectItem>
-                <SelectItem value="8">8 Takım</SelectItem>
-                <SelectItem value="16">16 Takım</SelectItem>
-                <SelectItem value="32">32 Takım</SelectItem>
+              <SelectContent className="lol-bg-dark border-gray-600 text-white">
+                <SelectItem value="4" className="text-white">4 Takım</SelectItem>
+                <SelectItem value="8" className="text-white">8 Takım</SelectItem>
+                <SelectItem value="16" className="text-white">16 Takım</SelectItem>
+                <SelectItem value="32" className="text-white">32 Takım</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -125,7 +125,7 @@ export function CreateTournamentModal({ isOpen, onClose, onCreateTournament, isL
               variant="outline"
               onClick={handleClose}
               disabled={isLoading}
-              className="flex-1 border-gray-600 text-white hover:lol-bg-dark"
+              className="flex-1 border-gray-600 text-white hover:text-white hover:lol-bg-dark"
               data-testid="cancel-tournament-button"
             >
               İptal
