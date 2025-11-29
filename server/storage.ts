@@ -1,13 +1,13 @@
-import { type Champion, type DraftSession, type InsertDraftSession, type Tournament, type Team, type Match, type InsertTournament, type InsertTeam, type InsertMatch, type AdminUser, type PlayerAccessCode, type InsertAdminUser, type InsertPlayerAccessCode, type TournamentTeamCode, type InsertTournamentTeamCode, type ModeratorUser, type InsertModeratorUser } from "@shared/schema";
+import { type Champion, type DraftSession, type InsertDraftSession, type Tournament, type Team, type Match, type InsertTournament, type InsertTeam, type InsertMatch, type AdminUser, type PlayerAccessCode, type InsertAdminUser, type InsertPlayerAccessCode, type TournamentTeamCode, type InsertTournamentTeamCode, type ModeratorUser, type InsertModeratorUser, champions, draftSessions, tournaments, teams, matches, adminUsers, moderatorUsers, playerAccessCodes, tournamentTeamCodes } from "@shared/schema";
 import { randomUUID, createHash } from "crypto";
+import { eq, and, desc } from "drizzle-orm";
+import { db } from "./db";
 import fs from "fs";
 import path from "path";
 
 export interface IStorage {
-  // Champions
   getChampions(): Promise<Champion[]>;
   
-  // Draft Sessions
   getDraftSession(id: string): Promise<DraftSession | undefined>;
   getDraftSessionByMatchId(matchId: string): Promise<DraftSession | undefined>;
   createDraftSession(session: InsertDraftSession): Promise<DraftSession>;
@@ -16,34 +16,29 @@ export interface IStorage {
   banChampion(id: string, championId: string): Promise<DraftSession | undefined>;
   pickChampion(id: string, championId: string): Promise<DraftSession | undefined>;
   
-  // Tournaments
   getTournaments(): Promise<Tournament[]>;
   getTournament(id: string): Promise<Tournament | undefined>;
   createTournament(tournament: InsertTournament): Promise<Tournament>;
   updateTournament(id: string, updates: Partial<Tournament>): Promise<Tournament | undefined>;
   deleteTournament(id: string): Promise<boolean>;
   
-  // Teams
   getTeams(tournamentId: string): Promise<Team[]>;
   getTeam(id: string): Promise<Team | undefined>;
   createTeam(team: InsertTeam): Promise<Team>;
   updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined>;
   deleteTeam(id: string): Promise<boolean>;
   
-  // Matches
   getMatches(tournamentId: string): Promise<Match[]>;
   getMatch(id: string): Promise<Match | undefined>;
   createMatch(match: InsertMatch): Promise<Match>;
   updateMatch(id: string, updates: Partial<Match>): Promise<Match | undefined>;
   deleteMatch(id: string): Promise<boolean>;
   
-  // Admin Auth
   verifyAdminCredentials(username: string, password: string): Promise<AdminUser | null>;
   createAdminSession(adminId: string): Promise<string>;
   validateAdminSession(token: string): Promise<AdminUser | null>;
   invalidateAdminSession(token: string): Promise<boolean>;
   
-  // Moderator Auth
   createModerator(username: string, password: string, adminId?: string): Promise<ModeratorUser>;
   getModerators(): Promise<ModeratorUser[]>;
   verifyModeratorCredentials(username: string, password: string): Promise<ModeratorUser | null>;
@@ -51,13 +46,11 @@ export interface IStorage {
   validateModeratorSession(token: string): Promise<ModeratorUser | null>;
   invalidateModeratorSession(token: string): Promise<boolean>;
   
-  // Player Access Codes (legacy - keeping for backward compatibility)
   createAccessCode(adminId: string): Promise<PlayerAccessCode>;
   getAccessCodes(): Promise<PlayerAccessCode[]>;
   validateAccessCode(code: string): Promise<PlayerAccessCode | null>;
   markAccessCodeUsed(id: string): Promise<boolean>;
   
-  // Tournament Team Codes
   createTournamentTeamCodes(tournamentId: string, blueTeamName?: string, redTeamName?: string): Promise<{ blueCode: TournamentTeamCode, redCode: TournamentTeamCode }>;
   getTournamentTeamCodes(tournamentId: string): Promise<TournamentTeamCode[]>;
   validateTeamCode(code: string): Promise<TournamentTeamCode | null>;
@@ -78,57 +71,56 @@ function generateAccessCode(): string {
   return code;
 }
 
-export class MemStorage implements IStorage {
-  private champions: Champion[] = [];
-  private draftSessions: Map<string, DraftSession> = new Map();
-  private tournaments: Map<string, Tournament> = new Map();
-  private teams: Map<string, Team> = new Map();
-  private matches: Map<string, Match> = new Map();
-  private adminUsers: Map<string, AdminUser> = new Map();
+export class DatabaseStorage implements IStorage {
+  private championsCache: Champion[] = [];
   private adminSessions: Map<string, string> = new Map();
-  private moderatorUsers: Map<string, ModeratorUser> = new Map();
   private moderatorSessions: Map<string, string> = new Map();
-  private playerAccessCodes: Map<string, PlayerAccessCode> = new Map();
-  private tournamentTeamCodes: Map<string, TournamentTeamCode> = new Map();
 
   constructor() {
     this.loadChampions();
     this.seedAdminUser();
   }
 
-  private seedAdminUser() {
-    const adminId = randomUUID();
-    const admin: AdminUser = {
-      id: adminId,
-      username: "admin",
-      passwordHash: hashPassword("admin123"),
-      createdAt: new Date(),
-    };
-    this.adminUsers.set(adminId, admin);
+  private async seedAdminUser() {
+    try {
+      const existingAdmin = await db.select().from(adminUsers).where(eq(adminUsers.username, "admin"));
+      if (existingAdmin.length === 0) {
+        const adminId = randomUUID();
+        await db.insert(adminUsers).values({
+          id: adminId,
+          username: "admin",
+          passwordHash: hashPassword("admin123"),
+        });
+        console.log("Default admin user seeded");
+      }
+    } catch (error) {
+      console.error("Failed to seed admin user:", error);
+    }
   }
 
   private loadChampions() {
     try {
       const championsPath = path.join(process.cwd(), "server", "data", "champions.json");
       const championsData = fs.readFileSync(championsPath, "utf-8");
-      this.champions = JSON.parse(championsData);
+      this.championsCache = JSON.parse(championsData);
     } catch (error) {
       console.error("Failed to load champions data:", error);
-      this.champions = [];
+      this.championsCache = [];
     }
   }
 
   async getChampions(): Promise<Champion[]> {
-    return this.champions;
+    return this.championsCache;
   }
 
   async getDraftSession(id: string): Promise<DraftSession | undefined> {
-    return this.draftSessions.get(id);
+    const result = await db.select().from(draftSessions).where(eq(draftSessions.id, id));
+    return result[0];
   }
 
   async getDraftSessionByMatchId(matchId: string): Promise<DraftSession | undefined> {
-    const sessions = Array.from(this.draftSessions.values());
-    return sessions.find(session => session.matchId === matchId);
+    const result = await db.select().from(draftSessions).where(eq(draftSessions.matchId, matchId));
+    return result[0];
   }
 
   async createDraftSession(session: InsertDraftSession): Promise<DraftSession> {
@@ -139,205 +131,160 @@ export class MemStorage implements IStorage {
       currentTeam: session.currentTeam || "blue",
       timer: session.timer || "30",
       phaseStep: session.phaseStep || "0",
-      blueTeamPicks: Array.isArray(session.blueTeamPicks) ? [...session.blueTeamPicks] : [],
-      redTeamPicks: Array.isArray(session.redTeamPicks) ? [...session.redTeamPicks] : [],
-      blueTeamBans: Array.isArray(session.blueTeamBans) ? [...session.blueTeamBans] : [],
-      redTeamBans: Array.isArray(session.redTeamBans) ? [...session.redTeamBans] : [],
+      blueTeamPicks: (session.blueTeamPicks || []) as string[],
+      redTeamPicks: (session.redTeamPicks || []) as string[],
+      blueTeamBans: (session.blueTeamBans || []) as string[],
+      redTeamBans: (session.redTeamBans || []) as string[],
       tournamentId: session.tournamentId || null,
       matchId: session.matchId || null,
       tournamentName: session.tournamentName || null,
       blueTeamName: session.blueTeamName || null,
       redTeamName: session.redTeamName || null,
     };
-    this.draftSessions.set(id, newSession);
+    await db.insert(draftSessions).values(newSession);
     return newSession;
   }
 
   async updateDraftSession(id: string, updates: Partial<DraftSession>): Promise<DraftSession | undefined> {
-    const session = this.draftSessions.get(id);
-    if (!session) return undefined;
-
-    const updatedSession = { ...session, ...updates };
-    this.draftSessions.set(id, updatedSession);
-    return updatedSession;
+    const result = await db.update(draftSessions)
+      .set(updates)
+      .where(eq(draftSessions.id, id))
+      .returning();
+    return result[0];
   }
 
   async startDraft(id: string): Promise<DraftSession | undefined> {
-    const session = this.draftSessions.get(id);
-    if (!session) return undefined;
-
-    const updatedSession = { 
-      ...session, 
+    return this.updateDraftSession(id, {
       phase: "ban1",
       phaseStep: "0",
       currentTeam: "blue",
       timer: "30"
-    };
-    this.draftSessions.set(id, updatedSession);
-    return updatedSession;
+    });
   }
 
   async banChampion(id: string, championId: string): Promise<DraftSession | undefined> {
-    const session = this.draftSessions.get(id);
+    const session = await this.getDraftSession(id);
     if (!session) return undefined;
 
-    const updatedSession = { ...session };
-    const step = parseInt(updatedSession.phaseStep);
+    const step = parseInt(session.phaseStep);
+    let updates: Partial<DraftSession> = {};
 
-    // Add ban to appropriate team
-    if (updatedSession.currentTeam === "blue") {
-      updatedSession.blueTeamBans = [...updatedSession.blueTeamBans, championId];
+    if (session.currentTeam === "blue") {
+      updates.blueTeamBans = [...session.blueTeamBans, championId];
     } else {
-      updatedSession.redTeamBans = [...updatedSession.redTeamBans, championId];
+      updates.redTeamBans = [...session.redTeamBans, championId];
     }
 
-    // Progress through ban phases
-    if (updatedSession.phase === "ban1") {
-      if (step < 5) { // 0-5 = 6 bans total
-        const nextStep = this.getNextBanPhase1(step, updatedSession);
-        updatedSession.currentTeam = nextStep.team;
-        updatedSession.phaseStep = nextStep.step.toString();
+    if (session.phase === "ban1") {
+      if (step < 5) {
+        const nextStep = this.getNextBanPhase1(step);
+        updates.currentTeam = nextStep.team;
+        updates.phaseStep = nextStep.step.toString();
       } else {
-        // Move to pick1 phase
-        updatedSession.phase = "pick1";
-        updatedSession.phaseStep = "0";
-        updatedSession.currentTeam = "blue";
+        updates.phase = "pick1";
+        updates.phaseStep = "0";
+        updates.currentTeam = "blue";
       }
-    } else if (updatedSession.phase === "ban2") {
-      if (step < 3) { // 0-3 = 4 bans total
-        const nextStep = this.getNextBanPhase2(step, updatedSession);
-        updatedSession.currentTeam = nextStep.team;
-        updatedSession.phaseStep = nextStep.step.toString();
+    } else if (session.phase === "ban2") {
+      if (step < 3) {
+        const nextStep = this.getNextBanPhase2(step);
+        updates.currentTeam = nextStep.team;
+        updates.phaseStep = nextStep.step.toString();
       } else {
-        // Move to pick2 phase
-        updatedSession.phase = "pick2";
-        updatedSession.phaseStep = "0";
-        updatedSession.currentTeam = "red";
+        updates.phase = "pick2";
+        updates.phaseStep = "0";
+        updates.currentTeam = "red";
       }
     }
 
-    this.draftSessions.set(id, updatedSession);
-    return updatedSession;
+    return this.updateDraftSession(id, updates);
   }
 
   async pickChampion(id: string, championId: string): Promise<DraftSession | undefined> {
-    const session = this.draftSessions.get(id);
+    const session = await this.getDraftSession(id);
     if (!session) return undefined;
 
-    const updatedSession = { ...session };
-    const step = parseInt(updatedSession.phaseStep);
+    const step = parseInt(session.phaseStep);
+    let updates: Partial<DraftSession> = {};
 
-    // Add pick to appropriate team
-    if (updatedSession.currentTeam === "blue") {
-      updatedSession.blueTeamPicks = [...updatedSession.blueTeamPicks, championId];
+    if (session.currentTeam === "blue") {
+      updates.blueTeamPicks = [...session.blueTeamPicks, championId];
     } else {
-      updatedSession.redTeamPicks = [...updatedSession.redTeamPicks, championId];
+      updates.redTeamPicks = [...session.redTeamPicks, championId];
     }
 
-    // Progress through pick phases
-    if (updatedSession.phase === "pick1") {
-      if (step < 5) { // 0-5 = 6 picks total
-        const nextStep = this.getNextPickPhase1(step, updatedSession);
-        updatedSession.currentTeam = nextStep.team;
-        updatedSession.phaseStep = nextStep.step.toString();
+    if (session.phase === "pick1") {
+      if (step < 5) {
+        const nextStep = this.getNextPickPhase1(step);
+        updates.currentTeam = nextStep.team;
+        updates.phaseStep = nextStep.step.toString();
       } else {
-        // Move to ban2 phase
-        updatedSession.phase = "ban2";
-        updatedSession.phaseStep = "0";
-        updatedSession.currentTeam = "red";
+        updates.phase = "ban2";
+        updates.phaseStep = "0";
+        updates.currentTeam = "red";
       }
-    } else if (updatedSession.phase === "pick2") {
-      if (step < 3) { // 0-3 = 4 picks total
-        const nextStep = this.getNextPickPhase2(step, updatedSession);
-        updatedSession.currentTeam = nextStep.team;
-        updatedSession.phaseStep = nextStep.step.toString();
+    } else if (session.phase === "pick2") {
+      if (step < 3) {
+        const nextStep = this.getNextPickPhase2(step);
+        updates.currentTeam = nextStep.team;
+        updates.phaseStep = nextStep.step.toString();
       } else {
-        // Draft completed
-        updatedSession.phase = "completed";
+        updates.phase = "completed";
       }
     }
 
-    this.draftSessions.set(id, updatedSession);
-    return updatedSession;
+    return this.updateDraftSession(id, updates);
   }
 
-  private getNextBanPhase1(step: number, session: DraftSession) {
-    // Ban Phase 1: Blue-Red-Blue-Red-Blue-Red (6 bans total, 3 each)
+  private getNextBanPhase1(step: number) {
     const sequence = ["blue", "red", "blue", "red", "blue", "red"];
     const nextStep = step + 1;
-    
-    if (nextStep >= sequence.length) {
-      return { team: "blue" as "blue" | "red", step: nextStep, completed: true };
-    }
-    
     return {
       team: sequence[nextStep] as "blue" | "red",
       step: nextStep,
-      completed: false
     };
   }
 
-  private getNextPickPhase1(step: number, session: DraftSession) {
-    // Pick Phase 1: Blue-Red-Red-Blue-Blue-Red (6 picks total)
+  private getNextPickPhase1(step: number) {
     const sequence = ["blue", "red", "red", "blue", "blue", "red"];
     const nextStep = step + 1;
-    
-    if (nextStep >= sequence.length) {
-      return { team: "blue" as "blue" | "red", step: nextStep, completed: true };
-    }
-    
     return {
       team: sequence[nextStep] as "blue" | "red",
       step: nextStep,
-      completed: false
     };
   }
 
-  private getNextBanPhase2(step: number, session: DraftSession) {
-    // Ban Phase 2: Red-Blue-Red-Blue (4 bans total, 2 each) 
+  private getNextBanPhase2(step: number) {
     const sequence = ["red", "blue", "red", "blue"];
     const nextStep = step + 1;
-    
-    if (nextStep >= sequence.length) {
-      return { team: "red" as "blue" | "red", step: nextStep, completed: true };
-    }
-    
     return {
       team: sequence[nextStep] as "blue" | "red",
       step: nextStep,
-      completed: false
     };
   }
 
-  private getNextPickPhase2(step: number, session: DraftSession) {
-    // Pick Phase 2: Red-Blue-Blue-Red (4 picks total)
+  private getNextPickPhase2(step: number) {
     const sequence = ["red", "blue", "blue", "red"];
     const nextStep = step + 1;
-    
-    if (nextStep >= sequence.length) {
-      return { team: "red" as "blue" | "red", step: nextStep, completed: true };
-    }
-    
     return {
       team: sequence[nextStep] as "blue" | "red",
       step: nextStep,
-      completed: false
     };
   }
 
-  // Tournament methods
   async getTournaments(): Promise<Tournament[]> {
-    return Array.from(this.tournaments.values());
+    return db.select().from(tournaments).orderBy(desc(tournaments.createdAt));
   }
 
   async getTournament(id: string): Promise<Tournament | undefined> {
-    return this.tournaments.get(id);
+    const result = await db.select().from(tournaments).where(eq(tournaments.id, id));
+    return result[0];
   }
 
   async createTournament(tournament: InsertTournament): Promise<Tournament> {
     const id = randomUUID();
     const now = new Date();
-    const newTournament: Tournament = {
+    const newTournament = {
       id,
       name: tournament.name,
       description: tournament.description || null,
@@ -347,74 +294,70 @@ export class MemStorage implements IStorage {
       createdAt: now,
       updatedAt: now,
     };
-    this.tournaments.set(id, newTournament);
+    await db.insert(tournaments).values(newTournament);
     return newTournament;
   }
 
   async updateTournament(id: string, updates: Partial<Tournament>): Promise<Tournament | undefined> {
-    const tournament = this.tournaments.get(id);
-    if (!tournament) return undefined;
-
-    const updatedTournament = { 
-      ...tournament, 
-      ...updates, 
-      updatedAt: new Date() 
-    };
-    this.tournaments.set(id, updatedTournament);
-    return updatedTournament;
+    const result = await db.update(tournaments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(tournaments.id, id))
+      .returning();
+    return result[0];
   }
 
   async deleteTournament(id: string): Promise<boolean> {
-    return this.tournaments.delete(id);
+    const result = await db.delete(tournaments).where(eq(tournaments.id, id));
+    return true;
   }
 
-  // Team methods
   async getTeams(tournamentId: string): Promise<Team[]> {
-    return Array.from(this.teams.values()).filter(team => team.tournamentId === tournamentId);
+    return db.select().from(teams).where(eq(teams.tournamentId, tournamentId));
   }
 
   async getTeam(id: string): Promise<Team | undefined> {
-    return this.teams.get(id);
+    const result = await db.select().from(teams).where(eq(teams.id, id));
+    return result[0];
   }
 
   async createTeam(team: InsertTeam): Promise<Team> {
     const id = randomUUID();
-    const newTeam: Team = {
+    const newTeam = {
       id,
       name: team.name,
       logo: team.logo || null,
       tournamentId: team.tournamentId,
       createdAt: new Date(),
     };
-    this.teams.set(id, newTeam);
+    await db.insert(teams).values(newTeam);
     return newTeam;
   }
 
   async updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined> {
-    const team = this.teams.get(id);
-    if (!team) return undefined;
-
-    const updatedTeam = { ...team, ...updates };
-    this.teams.set(id, updatedTeam);
-    return updatedTeam;
+    const result = await db.update(teams)
+      .set(updates)
+      .where(eq(teams.id, id))
+      .returning();
+    return result[0];
   }
 
   async deleteTeam(id: string): Promise<boolean> {
-    return this.teams.delete(id);
+    await db.delete(teams).where(eq(teams.id, id));
+    return true;
   }
 
-  // Match methods
   async getMatches(tournamentId: string): Promise<Match[]> {
-    return Array.from(this.matches.values()).filter(match => match.tournamentId === tournamentId);
+    return db.select().from(matches).where(eq(matches.tournamentId, tournamentId));
   }
 
   async getMatch(id: string): Promise<Match | undefined> {
-    return this.matches.get(id);
+    const result = await db.select().from(matches).where(eq(matches.id, id));
+    return result[0];
   }
 
   async createMatch(match: InsertMatch): Promise<Match> {
     const id = randomUUID();
-    const newMatch: Match = {
+    const newMatch = {
       id,
       tournamentId: match.tournamentId,
       team1Id: match.team1Id || null,
@@ -427,27 +370,26 @@ export class MemStorage implements IStorage {
       completedAt: match.completedAt || null,
       createdAt: new Date(),
     };
-    this.matches.set(id, newMatch);
+    await db.insert(matches).values(newMatch);
     return newMatch;
   }
 
   async updateMatch(id: string, updates: Partial<Match>): Promise<Match | undefined> {
-    const match = this.matches.get(id);
-    if (!match) return undefined;
-
-    const updatedMatch = { ...match, ...updates };
-    this.matches.set(id, updatedMatch);
-    return updatedMatch;
+    const result = await db.update(matches)
+      .set(updates)
+      .where(eq(matches.id, id))
+      .returning();
+    return result[0];
   }
 
   async deleteMatch(id: string): Promise<boolean> {
-    return this.matches.delete(id);
+    await db.delete(matches).where(eq(matches.id, id));
+    return true;
   }
 
-  // Admin Auth methods
   async verifyAdminCredentials(username: string, password: string): Promise<AdminUser | null> {
-    const admins = Array.from(this.adminUsers.values());
-    const admin = admins.find(a => a.username === username);
+    const result = await db.select().from(adminUsers).where(eq(adminUsers.username, username));
+    const admin = result[0];
     if (!admin) return null;
     
     const passwordHash = hashPassword(password);
@@ -465,36 +407,34 @@ export class MemStorage implements IStorage {
   async validateAdminSession(token: string): Promise<AdminUser | null> {
     const adminId = this.adminSessions.get(token);
     if (!adminId) return null;
-    return this.adminUsers.get(adminId) || null;
+    const result = await db.select().from(adminUsers).where(eq(adminUsers.id, adminId));
+    return result[0] || null;
   }
 
   async invalidateAdminSession(token: string): Promise<boolean> {
     return this.adminSessions.delete(token);
   }
 
-  // Moderator Auth methods
   async createModerator(username: string, password: string, adminId?: string): Promise<ModeratorUser> {
     const id = randomUUID();
-    const moderator: ModeratorUser = {
+    const moderator = {
       id,
       username,
       passwordHash: hashPassword(password),
       createdByAdminId: adminId || null,
       createdAt: new Date(),
     };
-    this.moderatorUsers.set(id, moderator);
+    await db.insert(moderatorUsers).values(moderator);
     return moderator;
   }
 
   async getModerators(): Promise<ModeratorUser[]> {
-    return Array.from(this.moderatorUsers.values()).sort((a, b) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return db.select().from(moderatorUsers).orderBy(desc(moderatorUsers.createdAt));
   }
 
   async verifyModeratorCredentials(username: string, password: string): Promise<ModeratorUser | null> {
-    const moderators = Array.from(this.moderatorUsers.values());
-    const moderator = moderators.find(m => m.username === username);
+    const result = await db.select().from(moderatorUsers).where(eq(moderatorUsers.username, username));
+    const moderator = result[0];
     if (!moderator) return null;
 
     const passwordHash = hashPassword(password);
@@ -512,18 +452,18 @@ export class MemStorage implements IStorage {
   async validateModeratorSession(token: string): Promise<ModeratorUser | null> {
     const moderatorId = this.moderatorSessions.get(token);
     if (!moderatorId) return null;
-    return this.moderatorUsers.get(moderatorId) || null;
+    const result = await db.select().from(moderatorUsers).where(eq(moderatorUsers.id, moderatorId));
+    return result[0] || null;
   }
 
   async invalidateModeratorSession(token: string): Promise<boolean> {
     return this.moderatorSessions.delete(token);
   }
 
-  // Player Access Code methods
   async createAccessCode(adminId: string): Promise<PlayerAccessCode> {
     const id = randomUUID();
     const code = generateAccessCode();
-    const accessCode: PlayerAccessCode = {
+    const accessCode = {
       id,
       code,
       issuedByAdminId: adminId,
@@ -531,38 +471,33 @@ export class MemStorage implements IStorage {
       used: false,
       usedAt: null,
     };
-    this.playerAccessCodes.set(id, accessCode);
+    await db.insert(playerAccessCodes).values(accessCode);
     return accessCode;
   }
 
   async getAccessCodes(): Promise<PlayerAccessCode[]> {
-    return Array.from(this.playerAccessCodes.values()).sort((a, b) => 
-      new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime()
-    );
+    return db.select().from(playerAccessCodes).orderBy(desc(playerAccessCodes.issuedAt));
   }
 
   async validateAccessCode(code: string): Promise<PlayerAccessCode | null> {
-    const codes = Array.from(this.playerAccessCodes.values());
-    return codes.find(c => c.code === code && !c.used) || null;
+    const result = await db.select().from(playerAccessCodes)
+      .where(and(eq(playerAccessCodes.code, code), eq(playerAccessCodes.used, false)));
+    return result[0] || null;
   }
 
   async markAccessCodeUsed(id: string): Promise<boolean> {
-    const accessCode = this.playerAccessCodes.get(id);
-    if (!accessCode) return false;
-    
-    accessCode.used = true;
-    accessCode.usedAt = new Date();
-    this.playerAccessCodes.set(id, accessCode);
+    await db.update(playerAccessCodes)
+      .set({ used: true, usedAt: new Date() })
+      .where(eq(playerAccessCodes.id, id));
     return true;
   }
 
-  // Tournament Team Codes methods
   async createTournamentTeamCodes(tournamentId: string, blueTeamName?: string, redTeamName?: string): Promise<{ blueCode: TournamentTeamCode, redCode: TournamentTeamCode }> {
     const blueId = randomUUID();
     const redId = randomUUID();
     const now = new Date();
 
-    const blueCode: TournamentTeamCode = {
+    const blueCode = {
       id: blueId,
       tournamentId,
       teamColor: "blue",
@@ -573,7 +508,7 @@ export class MemStorage implements IStorage {
       createdAt: now,
     };
 
-    const redCode: TournamentTeamCode = {
+    const redCode = {
       id: redId,
       tournamentId,
       teamColor: "red",
@@ -584,30 +519,27 @@ export class MemStorage implements IStorage {
       createdAt: now,
     };
 
-    this.tournamentTeamCodes.set(blueId, blueCode);
-    this.tournamentTeamCodes.set(redId, redCode);
+    await db.insert(tournamentTeamCodes).values(blueCode);
+    await db.insert(tournamentTeamCodes).values(redCode);
 
     return { blueCode, redCode };
   }
 
   async getTournamentTeamCodes(tournamentId: string): Promise<TournamentTeamCode[]> {
-    return Array.from(this.tournamentTeamCodes.values())
-      .filter(code => code.tournamentId === tournamentId);
+    return db.select().from(tournamentTeamCodes).where(eq(tournamentTeamCodes.tournamentId, tournamentId));
   }
 
   async validateTeamCode(code: string): Promise<TournamentTeamCode | null> {
-    const codes = Array.from(this.tournamentTeamCodes.values());
-    return codes.find(c => c.code === code) || null;
+    const result = await db.select().from(tournamentTeamCodes).where(eq(tournamentTeamCodes.code, code));
+    return result[0] || null;
   }
 
   async markTeamReady(id: string): Promise<TournamentTeamCode | null> {
-    const teamCode = this.tournamentTeamCodes.get(id);
-    if (!teamCode) return null;
-
-    teamCode.isReady = true;
-    teamCode.joinedAt = new Date();
-    this.tournamentTeamCodes.set(id, teamCode);
-    return teamCode;
+    const result = await db.update(tournamentTeamCodes)
+      .set({ isReady: true, joinedAt: new Date() })
+      .where(eq(tournamentTeamCodes.id, id))
+      .returning();
+    return result[0] || null;
   }
 
   async checkBothTeamsReady(tournamentId: string): Promise<boolean> {
@@ -617,4 +549,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
