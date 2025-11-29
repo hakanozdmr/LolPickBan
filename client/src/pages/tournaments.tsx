@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Tournament, Team, Match } from "@shared/schema";
 import { NavigationHeader } from "@/components/navigation-header";
 import { TournamentList } from "@/components/tournament-list";
@@ -11,12 +11,19 @@ import { Button } from "@/components/ui/button";
 import { Plus, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+interface TeamCodes {
+  blueCode: { code: string; teamName: string | null };
+  redCode: { code: string; teamName: string | null };
+}
+
 export default function Tournaments() {
   const { toast } = useToast();
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   
   const isAdmin = !!localStorage.getItem("adminSession");
+  const isModerator = !!localStorage.getItem("playerSession");
+  const canCreateTournament = isAdmin || isModerator;
 
   // Fetch tournaments
   const { data: tournaments = [], isLoading: tournamentsLoading } = useQuery<Tournament[]>({
@@ -35,33 +42,66 @@ export default function Tournaments() {
     enabled: !!selectedTournament,
   });
 
-  const createTournamentMutation = useMutation({
-    mutationFn: async (tournamentData: any) => {
+  const handleCreateTournament = async (tournamentData: any): Promise<TeamCodes | null> => {
+    try {
       const response = await fetch('/api/tournaments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(tournamentData),
+        body: JSON.stringify({
+          name: tournamentData.name,
+          description: tournamentData.description,
+          format: tournamentData.format,
+          maxTeams: tournamentData.maxTeams,
+        }),
       });
+      
       if (!response.ok) throw new Error('Failed to create tournament');
-      return response.json();
-    },
-    onSuccess: (tournament: Tournament) => {
+      const tournament: Tournament = await response.json();
+
+      const codesResponse = await fetch(`/api/tournaments/${tournament.id}/team-codes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blueTeamName: tournamentData.blueTeamName || undefined,
+          redTeamName: tournamentData.redTeamName || undefined,
+        }),
+      });
+
+      if (!codesResponse.ok) throw new Error('Failed to create team codes');
+      const codes = await codesResponse.json();
+
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
       setSelectedTournament(tournament);
-      setShowCreateModal(false);
+      
       toast({
         title: "Turnuva Oluşturuldu",
         description: `${tournament.name} başarıyla oluşturuldu.`,
       });
-    },
-    onError: () => {
+
+      return {
+        blueCode: { code: codes.blueCode.code, teamName: codes.blueCode.teamName },
+        redCode: { code: codes.redCode.code, teamName: codes.redCode.teamName },
+      };
+    } catch (error) {
       toast({
         title: "Hata",
         description: "Turnuva oluşturulurken bir hata oluştu.",
         variant: "destructive",
       });
-    },
-  });
+      return null;
+    }
+  };
+
+  const [isCreating, setIsCreating] = useState(false);
+  
+  const wrappedCreateTournament = async (data: any) => {
+    setIsCreating(true);
+    try {
+      return await handleCreateTournament(data);
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   if (tournamentsLoading) {
     return (
@@ -84,7 +124,7 @@ export default function Tournaments() {
                 Turnuva Yönetimi
               </h1>
             </div>
-{isAdmin && (
+{canCreateTournament && (
               <Button 
                 onClick={() => setShowCreateModal(true)}
                 className="lol-bg-gold hover:lol-bg-accent text-black font-medium"
@@ -122,11 +162,11 @@ export default function Tournaments() {
                 <Trophy className="w-16 h-16 lol-text-gray mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Turnuva Seçin</h3>
                 <p className="lol-text-gray mb-4">
-                  {isAdmin 
+                  {canCreateTournament 
                     ? "Bracket görünümü için sol taraftan bir turnuva seçin" 
                     : "Görüntülemek için sol taraftan bir turnuva seçin"}
                 </p>
-                {isAdmin && (
+                {canCreateTournament && (
                   <Button 
                     onClick={() => setShowCreateModal(true)}
                     variant="outline"
@@ -145,8 +185,8 @@ export default function Tournaments() {
       <CreateTournamentModal 
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onCreateTournament={(data) => createTournamentMutation.mutate(data)}
-        isLoading={createTournamentMutation.isPending}
+        onCreateTournament={wrappedCreateTournament}
+        isLoading={isCreating}
       />
 
       <Footer />
