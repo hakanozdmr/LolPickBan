@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Key, Gamepad2, Users, Shield } from "lucide-react";
+import { LogIn, Gamepad2, Users, Shield } from "lucide-react";
 import { Footer } from "./footer";
 import { useLocation } from "wouter";
 
@@ -24,39 +24,50 @@ interface TeamLoginResponse {
   isReady: boolean;
 }
 
+interface ModeratorLoginResponse {
+  token: string;
+  moderator: { id: string; username: string };
+  message: string;
+}
+
 export function PlayerLoginGate({ children }: PlayerLoginGateProps) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [code, setCode] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [teamCode, setTeamCode] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginType, setLoginType] = useState<"moderator" | "team">("moderator");
 
   useEffect(() => {
-    const session = localStorage.getItem("playerSession");
+    const moderatorSession = localStorage.getItem("moderatorSession");
     const teamSession = localStorage.getItem("teamSession");
-    if (session || teamSession) {
+    if (moderatorSession || teamSession) {
       setIsLoggedIn(true);
     }
   }, []);
 
   const moderatorLoginMutation = useMutation({
-    mutationFn: async (accessCode: string) => {
-      const res = await apiRequest("POST", "/api/auth/player/login", { code: accessCode });
+    mutationFn: async (credentials: { username: string; password: string }) => {
+      const res = await apiRequest("POST", "/api/auth/moderator/login", credentials);
       return res.json();
     },
-    onSuccess: (data: { sessionId: string }) => {
-      localStorage.setItem("playerSession", data.sessionId);
+    onSuccess: (data: ModeratorLoginResponse) => {
+      localStorage.setItem("moderatorSession", JSON.stringify({
+        token: data.token,
+        moderator: data.moderator
+      }));
       setIsLoggedIn(true);
-      toast({ title: "Giriş başarılı", description: "Moderatör olarak giriş yaptınız!" });
+      toast({ title: "Giriş başarılı", description: `Hoş geldiniz, ${data.moderator.username}!` });
     },
     onError: () => {
-      toast({ title: "Giriş başarısız", description: "Geçersiz veya kullanılmış kod", variant: "destructive" });
+      toast({ title: "Giriş başarısız", description: "Geçersiz kullanıcı adı veya şifre", variant: "destructive" });
     },
   });
 
   const teamLoginMutation = useMutation({
-    mutationFn: async (accessCode: string) => {
-      const res = await apiRequest("POST", "/api/auth/team/login", { code: accessCode });
+    mutationFn: async (code: string) => {
+      const res = await apiRequest("POST", "/api/auth/team/login", { code });
       return res.json();
     },
     onSuccess: (data: TeamLoginResponse) => {
@@ -72,13 +83,14 @@ export function PlayerLoginGate({ children }: PlayerLoginGateProps) {
     },
   });
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleModeratorLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginType === "moderator") {
-      moderatorLoginMutation.mutate(code);
-    } else {
-      teamLoginMutation.mutate(code);
-    }
+    moderatorLoginMutation.mutate({ username, password });
+  };
+
+  const handleTeamLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    teamLoginMutation.mutate(teamCode);
   };
 
   if (isLoggedIn) {
@@ -97,7 +109,10 @@ export function PlayerLoginGate({ children }: PlayerLoginGateProps) {
             </div>
             <CardTitle className="text-2xl lol-text-gold">LoL Draft Simulator</CardTitle>
             <CardDescription className="text-gray-400">
-              Turnuvaya katılmak için giriş kodunuzu girin
+              {loginType === "moderator" 
+                ? "Moderatör hesabınızla giriş yapın"
+                : "Takım kodunuzla giriş yapın"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -122,37 +137,78 @@ export function PlayerLoginGate({ children }: PlayerLoginGateProps) {
               </TabsList>
             </Tabs>
 
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <Label htmlFor="access-code" className="text-white">
-                  {loginType === "moderator" ? "Moderatör Kodu" : "Takım Kodu"}
-                </Label>
-                <Input
-                  id="access-code"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="XXXXXXXX"
-                  className="lol-bg-dark border-gray-600 text-white uppercase tracking-widest text-center text-lg mt-2"
-                  maxLength={8}
-                  data-testid="player-code-input"
-                />
-                <p className="text-xs text-gray-400 mt-2 text-center">
-                  {loginType === "moderator" 
-                    ? "Admin tarafından verilen 8 karakterlik moderatör kodunu giriniz"
-                    : "Turnuva için verilen 8 karakterlik takım kodunuzu giriniz"
-                  }
+            {loginType === "moderator" ? (
+              <form onSubmit={handleModeratorLogin} className="space-y-4">
+                <div>
+                  <Label htmlFor="username" className="text-white">
+                    Kullanıcı Adı
+                  </Label>
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Kullanıcı adınız"
+                    className="lol-bg-dark border-gray-600 text-white mt-2"
+                    data-testid="moderator-username-input"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="password" className="text-white">
+                    Şifre
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Şifreniz"
+                    className="lol-bg-dark border-gray-600 text-white mt-2"
+                    data-testid="moderator-password-input"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 text-center">
+                  Moderatör hesabınızla giriş yapın
                 </p>
-              </div>
-              <Button
-                type="submit"
-                disabled={isPending || code.length < 8}
-                className="w-full lol-bg-gold hover:lol-bg-accent text-black font-medium"
-                data-testid="player-login-button"
-              >
-                <Key className="w-4 h-4 mr-2" />
-                {isPending ? "Giriş yapılıyor..." : "Giriş Yap"}
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  disabled={isPending || !username || !password}
+                  className="w-full lol-bg-gold hover:lol-bg-accent text-black font-medium"
+                  data-testid="moderator-login-button"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  {moderatorLoginMutation.isPending ? "Giriş yapılıyor..." : "Giriş Yap"}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleTeamLogin} className="space-y-4">
+                <div>
+                  <Label htmlFor="team-code" className="text-white">
+                    Takım Kodu
+                  </Label>
+                  <Input
+                    id="team-code"
+                    value={teamCode}
+                    onChange={(e) => setTeamCode(e.target.value.toUpperCase())}
+                    placeholder="XXXXXXXX"
+                    className="lol-bg-dark border-gray-600 text-white uppercase tracking-widest text-center text-lg mt-2"
+                    maxLength={8}
+                    data-testid="team-code-input"
+                  />
+                  <p className="text-xs text-gray-400 mt-2 text-center">
+                    Turnuva için verilen 8 karakterlik takım kodunuzu giriniz
+                  </p>
+                </div>
+                <Button
+                  type="submit"
+                  disabled={isPending || teamCode.length < 8}
+                  className="w-full lol-bg-gold hover:lol-bg-accent text-black font-medium"
+                  data-testid="team-login-button"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  {teamLoginMutation.isPending ? "Giriş yapılıyor..." : "Giriş Yap"}
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>
