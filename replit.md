@@ -36,13 +36,12 @@ The application includes a three-tier authentication system:
 - **Admin** (via /admin page): Top-level administrators
   - Authenticate with username/password (default: admin/admin123)
   - Accessed via "Admin Girişi" button in the footer
-  - Can generate unique 8-character moderator access codes
+  - Can create moderator accounts with username/password
   - Session tokens stored in localStorage and validated via API
 
 - **Moderator Login** (via login gate): Tournament organizers
   - First-time visitors see a tabbed login screen (Moderator/Team)
-  - Moderator tab requires 8-character access code from admin
-  - Codes are single-use and marked as used after successful login
+  - Moderator tab requires username/password (created by admin)
   - Session persisted in localStorage for seamless experience
   - Can create tournaments and generate team codes
 
