@@ -9,6 +9,7 @@ export function NavigationHeader() {
 
   const handleLogout = () => {
     localStorage.removeItem("playerSession");
+    localStorage.removeItem("teamSession");
     toast({ title: "Çıkış yapıldı" });
     window.location.href = "/";
   };

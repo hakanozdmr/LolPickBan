@@ -31,10 +31,6 @@ function Router() {
     return <AdminPage />;
   }
   
-  if (location.startsWith("/team-lobby/")) {
-    return <TeamLobby />;
-  }
-  
   return <ProtectedRoutes />;
 }
 
