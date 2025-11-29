@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import DraftSimulator from "@/pages/draft-simulator";
 import Tournaments from "@/pages/tournaments";
 import NotFound from "@/pages/not-found";
+import { FooterAuthPanel } from "@/components/footer-auth-panel";
 
 function Router() {
   return (
@@ -24,7 +25,10 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <div className="pb-32">
+            <Router />
+          </div>
+          <FooterAuthPanel />
         </TooltipProvider>
       </QueryClientProvider>
     </div>
