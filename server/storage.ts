@@ -75,13 +75,22 @@ export class DatabaseStorage implements IStorage {
   private championsCache: Champion[] = [];
   private adminSessions: Map<string, string> = new Map();
   private moderatorSessions: Map<string, string> = new Map();
+  private initialized: boolean = false;
+  private initPromise: Promise<void> | null = null;
 
   constructor() {
     this.loadChampions();
-    this.seedAdminUser();
+    this.initPromise = this.seedAdminUser();
   }
 
-  private async seedAdminUser() {
+  async ensureInitialized(): Promise<void> {
+    if (!this.initialized && this.initPromise) {
+      await this.initPromise;
+      this.initialized = true;
+    }
+  }
+
+  private async seedAdminUser(): Promise<void> {
     try {
       const existingAdmin = await db.select().from(adminUsers).where(eq(adminUsers.username, "admin"));
       if (existingAdmin.length === 0) {
@@ -388,6 +397,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async verifyAdminCredentials(username: string, password: string): Promise<AdminUser | null> {
+    await this.ensureInitialized();
     const result = await db.select().from(adminUsers).where(eq(adminUsers.username, username));
     const admin = result[0];
     if (!admin) return null;
