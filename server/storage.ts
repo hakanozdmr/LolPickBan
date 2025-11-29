@@ -1,4 +1,4 @@
-import { type Champion, type DraftSession, type InsertDraftSession, type Tournament, type Team, type Match, type InsertTournament, type InsertTeam, type InsertMatch, type AdminUser, type PlayerAccessCode, type InsertAdminUser, type InsertPlayerAccessCode, type TournamentTeamCode, type InsertTournamentTeamCode } from "@shared/schema";
+import { type Champion, type DraftSession, type InsertDraftSession, type Tournament, type Team, type Match, type InsertTournament, type InsertTeam, type InsertMatch, type AdminUser, type PlayerAccessCode, type InsertAdminUser, type InsertPlayerAccessCode, type TournamentTeamCode, type InsertTournamentTeamCode, type ModeratorUser, type InsertModeratorUser } from "@shared/schema";
 import { randomUUID, createHash } from "crypto";
 import fs from "fs";
 import path from "path";
@@ -43,7 +43,15 @@ export interface IStorage {
   validateAdminSession(token: string): Promise<AdminUser | null>;
   invalidateAdminSession(token: string): Promise<boolean>;
   
-  // Player Access Codes
+  // Moderator Auth
+  createModerator(username: string, password: string, adminId?: string): Promise<ModeratorUser>;
+  getModerators(): Promise<ModeratorUser[]>;
+  verifyModeratorCredentials(username: string, password: string): Promise<ModeratorUser | null>;
+  createModeratorSession(moderatorId: string): Promise<string>;
+  validateModeratorSession(token: string): Promise<ModeratorUser | null>;
+  invalidateModeratorSession(token: string): Promise<boolean>;
+  
+  // Player Access Codes (legacy - keeping for backward compatibility)
   createAccessCode(adminId: string): Promise<PlayerAccessCode>;
   getAccessCodes(): Promise<PlayerAccessCode[]>;
   validateAccessCode(code: string): Promise<PlayerAccessCode | null>;
@@ -78,6 +86,8 @@ export class MemStorage implements IStorage {
   private matches: Map<string, Match> = new Map();
   private adminUsers: Map<string, AdminUser> = new Map();
   private adminSessions: Map<string, string> = new Map();
+  private moderatorUsers: Map<string, ModeratorUser> = new Map();
+  private moderatorSessions: Map<string, string> = new Map();
   private playerAccessCodes: Map<string, PlayerAccessCode> = new Map();
   private tournamentTeamCodes: Map<string, TournamentTeamCode> = new Map();
 
@@ -460,6 +470,53 @@ export class MemStorage implements IStorage {
 
   async invalidateAdminSession(token: string): Promise<boolean> {
     return this.adminSessions.delete(token);
+  }
+
+  // Moderator Auth methods
+  async createModerator(username: string, password: string, adminId?: string): Promise<ModeratorUser> {
+    const id = randomUUID();
+    const moderator: ModeratorUser = {
+      id,
+      username,
+      passwordHash: hashPassword(password),
+      createdByAdminId: adminId || null,
+      createdAt: new Date(),
+    };
+    this.moderatorUsers.set(id, moderator);
+    return moderator;
+  }
+
+  async getModerators(): Promise<ModeratorUser[]> {
+    return Array.from(this.moderatorUsers.values()).sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  async verifyModeratorCredentials(username: string, password: string): Promise<ModeratorUser | null> {
+    const moderators = Array.from(this.moderatorUsers.values());
+    const moderator = moderators.find(m => m.username === username);
+    if (!moderator) return null;
+
+    const passwordHash = hashPassword(password);
+    if (moderator.passwordHash !== passwordHash) return null;
+
+    return moderator;
+  }
+
+  async createModeratorSession(moderatorId: string): Promise<string> {
+    const token = randomUUID();
+    this.moderatorSessions.set(token, moderatorId);
+    return token;
+  }
+
+  async validateModeratorSession(token: string): Promise<ModeratorUser | null> {
+    const moderatorId = this.moderatorSessions.get(token);
+    if (!moderatorId) return null;
+    return this.moderatorUsers.get(moderatorId) || null;
+  }
+
+  async invalidateModeratorSession(token: string): Promise<boolean> {
+    return this.moderatorSessions.delete(token);
   }
 
   // Player Access Code methods
