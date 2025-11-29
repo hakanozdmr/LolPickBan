@@ -4,17 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { NavigationHeader } from "@/components/navigation-header";
 import { Footer } from "@/components/footer";
-import { Shield, Copy, LogOut, Plus, Key, ArrowLeft } from "lucide-react";
+import { Shield, Copy, LogOut, Plus, UserPlus, ArrowLeft, User } from "lucide-react";
 import { Link } from "wouter";
-import type { PlayerAccessCode } from "@shared/schema";
 
 interface AdminSession {
   token: string;
   admin: { id: string; username: string };
+}
+
+interface Moderator {
+  id: string;
+  username: string;
+  createdAt: string;
 }
 
 export default function AdminPage() {
@@ -26,15 +32,19 @@ export default function AdminPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  
+  const [newModUsername, setNewModUsername] = useState("");
+  const [newModPassword, setNewModPassword] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const accessCodesQuery = useQuery<PlayerAccessCode[]>({
-    queryKey: ["/api/auth/admin/access-codes"],
+  const moderatorsQuery = useQuery<Moderator[]>({
+    queryKey: ["/api/auth/admin/moderators"],
     enabled: !!adminSession,
     queryFn: async () => {
-      const res = await fetch("/api/auth/admin/access-codes", {
+      const res = await fetch("/api/auth/admin/moderators", {
         headers: { Authorization: `Bearer ${adminSession?.token}` },
       });
-      if (!res.ok) throw new Error("Failed to fetch codes");
+      if (!res.ok) throw new Error("Failed to fetch moderators");
       return res.json();
     },
   });
@@ -50,7 +60,7 @@ export default function AdminPage() {
       setUsername("");
       setPassword("");
       toast({ title: "Giriş başarılı", description: `Hoş geldiniz, ${data.admin.username}` });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/admin/access-codes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/admin/moderators"] });
     },
     onError: () => {
       toast({ title: "Giriş başarısız", description: "Kullanıcı adı veya şifre hatalı", variant: "destructive" });
@@ -71,36 +81,47 @@ export default function AdminPage() {
     },
   });
 
-  const generateCodesMutation = useMutation({
-    mutationFn: async (count: number) => {
-      const res = await fetch("/api/auth/admin/access-codes", {
+  const createModeratorMutation = useMutation({
+    mutationFn: async (data: { username: string; password: string }) => {
+      const res = await fetch("/api/auth/admin/moderators", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${adminSession?.token}`,
         },
-        body: JSON.stringify({ count }),
+        body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to generate codes");
+      if (!res.ok) throw new Error("Failed to create moderator");
       return res.json();
     },
-    onSuccess: (codes: PlayerAccessCode[]) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/admin/access-codes"] });
-      toast({ title: "Kodlar oluşturuldu", description: `${codes.length} yeni giriş kodu oluşturuldu` });
+    onSuccess: (moderator: Moderator) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/admin/moderators"] });
+      toast({ 
+        title: "Moderatör oluşturuldu", 
+        description: `${moderator.username} hesabı başarıyla oluşturuldu` 
+      });
+      setNewModUsername("");
+      setNewModPassword("");
+      setIsCreateModalOpen(false);
     },
     onError: () => {
-      toast({ title: "Hata", description: "Kodlar oluşturulamadı", variant: "destructive" });
+      toast({ title: "Hata", description: "Moderatör oluşturulamadı", variant: "destructive" });
     },
   });
 
-  const copyToClipboard = (code: string) => {
-    navigator.clipboard.writeText(code);
-    toast({ title: "Kopyalandı", description: code });
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Kopyalandı", description: label });
   };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     loginMutation.mutate({ username, password });
+  };
+
+  const handleCreateModerator = (e: React.FormEvent) => {
+    e.preventDefault();
+    createModeratorMutation.mutate({ username: newModUsername, password: newModPassword });
   };
 
   return (
@@ -142,59 +163,103 @@ export default function AdminPage() {
                     <Shield className="w-5 h-5" />
                     <span>Giriş yapıldı: {adminSession.admin.username}</span>
                   </div>
-                  <Button
-                    onClick={() => generateCodesMutation.mutate(1)}
-                    disabled={generateCodesMutation.isPending}
-                    className="lol-bg-gold hover:lol-bg-accent text-black font-medium"
-                    data-testid="generate-code-button"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {generateCodesMutation.isPending ? "Oluşturuluyor..." : "Yeni Kod Üret"}
-                  </Button>
+                  <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        className="lol-bg-gold hover:lol-bg-accent text-black font-medium"
+                        data-testid="create-moderator-button"
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Yeni Moderatör Ekle
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="lol-bg-darker border-gray-700">
+                      <DialogHeader>
+                        <DialogTitle className="lol-text-gold flex items-center gap-2">
+                          <UserPlus className="w-5 h-5" />
+                          Yeni Moderatör Oluştur
+                        </DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleCreateModerator} className="space-y-4 mt-4">
+                        <div>
+                          <Label htmlFor="mod-username" className="text-white">Kullanıcı Adı</Label>
+                          <Input
+                            id="mod-username"
+                            value={newModUsername}
+                            onChange={(e) => setNewModUsername(e.target.value)}
+                            placeholder="moderator1"
+                            className="lol-bg-dark border-gray-600 text-white mt-2"
+                            data-testid="new-moderator-username"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">En az 3 karakter</p>
+                        </div>
+                        <div>
+                          <Label htmlFor="mod-password" className="text-white">Şifre</Label>
+                          <Input
+                            id="mod-password"
+                            type="password"
+                            value={newModPassword}
+                            onChange={(e) => setNewModPassword(e.target.value)}
+                            placeholder="••••••••"
+                            className="lol-bg-dark border-gray-600 text-white mt-2"
+                            data-testid="new-moderator-password"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">En az 6 karakter</p>
+                        </div>
+                        <Button
+                          type="submit"
+                          disabled={createModeratorMutation.isPending || newModUsername.length < 3 || newModPassword.length < 6}
+                          className="w-full lol-bg-gold hover:lol-bg-accent text-black font-medium"
+                          data-testid="submit-create-moderator"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          {createModeratorMutation.isPending ? "Oluşturuluyor..." : "Moderatör Oluştur"}
+                        </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 <div>
                   <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
-                    <Key className="w-5 h-5" />
-                    Üretilen Giriş Kodları
+                    <User className="w-5 h-5" />
+                    Moderatörler
                   </h3>
                   
-                  {accessCodesQuery.isLoading ? (
+                  {moderatorsQuery.isLoading ? (
                     <p className="text-gray-400">Yükleniyor...</p>
-                  ) : accessCodesQuery.data && accessCodesQuery.data.length > 0 ? (
+                  ) : moderatorsQuery.data && moderatorsQuery.data.length > 0 ? (
                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {accessCodesQuery.data.map((code) => (
+                      {moderatorsQuery.data.map((mod) => (
                         <div
-                          key={code.id}
-                          className={`flex items-center justify-between p-3 rounded-lg ${
-                            code.used ? "bg-gray-800 opacity-60" : "lol-bg-dark"
-                          }`}
-                          data-testid={`access-code-${code.id}`}
+                          key={mod.id}
+                          className="flex items-center justify-between p-3 rounded-lg lol-bg-dark"
+                          data-testid={`moderator-${mod.id}`}
                         >
                           <div className="flex items-center gap-4">
-                            <span className={`font-mono text-lg tracking-widest ${code.used ? "line-through text-gray-500" : "text-white"}`}>
-                              {code.code}
+                            <User className="w-5 h-5 text-amber-500" />
+                            <span className="font-medium text-white">
+                              {mod.username}
                             </span>
-                            {code.used && <span className="text-xs text-red-400 bg-red-900/30 px-2 py-1 rounded">Kullanıldı</span>}
-                            {!code.used && <span className="text-xs text-green-400 bg-green-900/30 px-2 py-1 rounded">Aktif</span>}
+                            <span className="text-xs text-gray-400">
+                              {new Date(mod.createdAt).toLocaleDateString('tr-TR')}
+                            </span>
                           </div>
-                          {!code.used && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(code.code)}
-                              className="text-gray-400 hover:text-white"
-                              data-testid={`copy-code-${code.id}`}
-                            >
-                              <Copy className="w-4 h-4 mr-2" />
-                              Kopyala
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard(mod.username, `Kullanıcı adı: ${mod.username}`)}
+                            className="text-gray-400 hover:text-white"
+                            data-testid={`copy-username-${mod.id}`}
+                          >
+                            <Copy className="w-4 h-4 mr-2" />
+                            Kopyala
+                          </Button>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-400">Henüz kod üretilmemiş. Yukarıdaki butona tıklayarak yeni kod üretebilirsiniz.</p>
+                    <p className="text-gray-400">Henüz moderatör eklenmemiş. Yukarıdaki butona tıklayarak yeni moderatör ekleyebilirsiniz.</p>
                   )}
                 </div>
               </CardContent>
