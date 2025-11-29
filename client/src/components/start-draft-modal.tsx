@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Play, Copy, Check, Users } from "lucide-react";
+import { Play, Copy, Check, Users, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 interface TeamCodes {
   blueCode: { code: string; teamName: string | null };
@@ -31,7 +32,8 @@ export function StartDraftModal({
   onDraftStarted 
 }: StartDraftModalProps) {
   const { toast } = useToast();
-  const [step, setStep] = useState<'names' | 'codes'>('names');
+  const [, setLocation] = useLocation();
+  const [step, setStep] = useState<'loading' | 'names' | 'codes'>('loading');
   const [formData, setFormData] = useState({
     blueTeamName: team1Name || "",
     redTeamName: team2Name || "",
@@ -39,6 +41,44 @@ export function StartDraftModal({
   const [teamCodes, setTeamCodes] = useState<TeamCodes | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [draftSessionId, setDraftSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchExistingCodes();
+    }
+  }, [isOpen, tournamentId]);
+
+  const fetchExistingCodes = async () => {
+    setStep('loading');
+    try {
+      const response = await fetch(`/api/tournaments/${tournamentId}/team-codes`);
+      if (response.ok) {
+        const codes = await response.json();
+        if (codes && codes.length >= 2) {
+          const blueCode = codes.find((c: any) => c.teamColor === 'blue');
+          const redCode = codes.find((c: any) => c.teamColor === 'red');
+          if (blueCode && redCode) {
+            setTeamCodes({
+              blueCode: { code: blueCode.code, teamName: blueCode.teamName },
+              redCode: { code: redCode.code, teamName: redCode.teamName },
+            });
+            setStep('codes');
+            
+            const draftResponse = await fetch(`/api/tournaments/${tournamentId}/draft`);
+            if (draftResponse.ok) {
+              const draftData = await draftResponse.json();
+              setDraftSessionId(draftData.id);
+            }
+            return;
+          }
+        }
+      }
+      setStep('names');
+    } catch (error) {
+      setStep('names');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,15 +114,21 @@ export function StartDraftModal({
     }
   };
 
-  const handleStartDraft = async () => {
+  const handleGoToDraft = async () => {
     setIsLoading(true);
     try {
+      if (draftSessionId) {
+        setLocation(`/draft-simulator?session=${draftSessionId}`);
+        handleClose();
+        return;
+      }
+      
       const response = await fetch(`/api/matches/${matchId}/draft`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          blueTeamName: formData.blueTeamName || 'Mavi Takım',
-          redTeamName: formData.redTeamName || 'Kırmızı Takım',
+          blueTeamName: teamCodes?.blueCode.teamName || formData.blueTeamName || 'Mavi Takım',
+          redTeamName: teamCodes?.redCode.teamName || formData.redTeamName || 'Kırmızı Takım',
         }),
       });
       
@@ -90,11 +136,12 @@ export function StartDraftModal({
       const draftSession = await response.json();
       
       toast({
-        title: "Draft Başlatıldı",
-        description: "Maç için draft oturumu başlatıldı.",
+        title: "Draft Oluşturuldu",
+        description: "Draft sayfasına yönlendiriliyorsunuz...",
       });
       
-      onDraftStarted(draftSession.id);
+      setLocation(`/draft-simulator?session=${draftSession.id}`);
+      handleClose();
     } catch (error) {
       toast({
         title: "Hata",
@@ -107,13 +154,14 @@ export function StartDraftModal({
   };
 
   const handleClose = () => {
-    setStep('names');
+    setStep('loading');
     setFormData({
       blueTeamName: team1Name || "",
       redTeamName: team2Name || "",
     });
     setTeamCodes(null);
     setCopiedCode(null);
+    setDraftSessionId(null);
     onClose();
   };
 
@@ -123,6 +171,24 @@ export function StartDraftModal({
     toast({ title: "Kopyalandı!", description: "Kod panoya kopyalandı." });
     setTimeout(() => setCopiedCode(null), 2000);
   };
+
+  if (step === 'loading') {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="lol-bg-darker border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 lol-text-gold">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Yükleniyor
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-lol-gold" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (step === 'codes' && teamCodes) {
     return (
@@ -207,13 +273,16 @@ export function StartDraftModal({
                 Kapat
               </Button>
               <Button
-                onClick={handleStartDraft}
+                onClick={handleGoToDraft}
                 disabled={isLoading}
                 className="flex-1 lol-bg-gold hover:lol-bg-accent text-black font-medium"
-                data-testid="start-draft-button"
+                data-testid="go-to-draft-button"
               >
                 {isLoading ? (
-                  "Başlatılıyor..."
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Yönlendiriliyor...
+                  </>
                 ) : (
                   <>
                     <Play className="w-4 h-4 mr-2" />

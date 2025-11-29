@@ -3,13 +3,28 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Play, Users, Plus, Gamepad2, Shield, Sword, Eye } from "lucide-react";
+import { Play, Users, Plus, Gamepad2, Shield, Sword, Eye, Check, Clock } from "lucide-react";
 import { useState } from "react";
 import { AddTeamModal } from "@/components/add-team-modal";
 import { StartDraftModal } from "@/components/start-draft-modal";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+
+interface ReadyStatus {
+  blueTeam: {
+    teamName: string | null;
+    isReady: boolean;
+    joinedAt: string | null;
+  } | null;
+  redTeam: {
+    teamName: string | null;
+    isReady: boolean;
+    joinedAt: string | null;
+  } | null;
+  bothReady: boolean;
+}
 
 interface TournamentBracketProps {
   tournament: Tournament;
@@ -19,9 +34,26 @@ interface TournamentBracketProps {
 
 export function TournamentBracket({ tournament, teams, matches }: TournamentBracketProps) {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [showAddTeamModal, setShowAddTeamModal] = useState(false);
   const [draftModalMatchId, setDraftModalMatchId] = useState<string | null>(null);
   const [startDraftMatch, setStartDraftMatch] = useState<Match | null>(null);
+
+  const { data: readyStatus } = useQuery<ReadyStatus>({
+    queryKey: ['/api/tournaments', tournament.id, 'ready-status'],
+    refetchInterval: 3000,
+  });
+
+  const { data: draftSession } = useQuery<DraftSession | null>({
+    queryKey: ['/api/tournaments', tournament.id, 'draft'],
+  });
+
+  const { data: teamCodes } = useQuery<Array<{code: string; teamColor: string; teamName: string | null}>>({
+    queryKey: ['/api/tournaments', tournament.id, 'team-codes'],
+    refetchInterval: 3000,
+  });
+
+  const hasTeamCodes = teamCodes && teamCodes.length >= 2;
 
   const addTeamMutation = useMutation({
     mutationFn: async (teamData: any) => {
@@ -545,7 +577,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                    match.status === 'in_progress' ? 'Devam Ediyor' : 'Tamamlandı'}
                                 </Badge>
                                 
-                                {match.status === 'pending' && team1 && team2 && (
+                                {match.status === 'pending' && team1 && team2 && !hasTeamCodes && (
                                   <Button 
                                     size="sm"
                                     onClick={() => setStartDraftMatch(match)}
@@ -557,7 +589,90 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                   </Button>
                                 )}
 
-                                {match.status === 'in_progress' && !match.winnerId && team1 && team2 && (
+                                {match.status === 'pending' && hasTeamCodes && (
+                                  <div className="space-y-2">
+                                    {(readyStatus?.blueTeam || readyStatus?.redTeam) ? (
+                                      <div className="flex items-center gap-2 text-xs">
+                                        <div className={`flex items-center gap-1 ${readyStatus?.blueTeam?.isReady ? 'text-green-400' : 'text-yellow-400'}`}>
+                                          {readyStatus?.blueTeam?.isReady ? <Check className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                                          <span>Mavi</span>
+                                        </div>
+                                        <div className={`flex items-center gap-1 ${readyStatus?.redTeam?.isReady ? 'text-green-400' : 'text-yellow-400'}`}>
+                                          {readyStatus?.redTeam?.isReady ? <Check className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                                          <span>Kırmızı</span>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-xs text-gray-400">
+                                        Takımlar bekleniyor...
+                                      </div>
+                                    )}
+                                    {readyStatus?.bothReady ? (
+                                      <Button 
+                                        size="sm"
+                                        onClick={async () => {
+                                          try {
+                                            const response = await fetch(`/api/matches/${match.id}/draft`, {
+                                              method: 'POST',
+                                              headers: { 'Content-Type': 'application/json' },
+                                              body: JSON.stringify({
+                                                blueTeamName: team1?.name || 'Mavi Takım',
+                                                redTeamName: team2?.name || 'Kırmızı Takım',
+                                              }),
+                                            });
+                                            if (!response.ok) throw new Error('Failed to create draft');
+                                            const draft = await response.json();
+                                            setLocation(`/draft-simulator?session=${draft.id}`);
+                                          } catch (error) {
+                                            console.error('Error navigating to draft:', error);
+                                          }
+                                        }}
+                                        className="lol-bg-gold hover:lol-bg-accent text-black text-xs w-full"
+                                        data-testid={`go-to-draft-${match.id}`}
+                                      >
+                                        <Play className="w-3 h-3 mr-1" />
+                                        Draft'a Git
+                                      </Button>
+                                    ) : (
+                                      <Button 
+                                        size="sm"
+                                        onClick={() => setStartDraftMatch(match)}
+                                        variant="outline"
+                                        className="border-gray-600 text-gray-300 hover:text-white text-xs w-full"
+                                        data-testid={`show-codes-${match.id}`}
+                                      >
+                                        <Users className="w-3 h-3 mr-1" />
+                                        Kodları Göster
+                                      </Button>
+                                    )}
+                                  </div>
+                                )}
+
+                                {match.status === 'in_progress' && draftSession && draftSession.phase === 'waiting' && (
+                                  <Button 
+                                    size="sm"
+                                    onClick={() => setLocation(`/draft-simulator?session=${draftSession.id}`)}
+                                    className="lol-bg-gold hover:lol-bg-accent text-black text-xs"
+                                    data-testid={`go-to-draft-${match.id}`}
+                                  >
+                                    <Play className="w-3 h-3 mr-1" />
+                                    Draft'a Git
+                                  </Button>
+                                )}
+
+                                {match.status === 'in_progress' && draftSession && draftSession.phase !== 'waiting' && draftSession.phase !== 'completed' && (
+                                  <Button 
+                                    size="sm"
+                                    onClick={() => setLocation(`/draft-simulator?session=${draftSession.id}`)}
+                                    className="bg-green-600 hover:bg-green-700 text-white text-xs"
+                                    data-testid={`view-draft-${match.id}`}
+                                  >
+                                    <Eye className="w-3 h-3 mr-1" />
+                                    Draft İzle
+                                  </Button>
+                                )}
+
+                                {match.status === 'in_progress' && !match.winnerId && team1 && team2 && draftSession?.phase === 'completed' && (
                                   <div className="space-y-1">
                                     <div className="text-xs lol-text-gray mb-1">Kazanan:</div>
                                     <Button 

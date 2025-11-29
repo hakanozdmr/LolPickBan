@@ -31,6 +31,12 @@ interface ReadyStatus {
   bothReady: boolean;
 }
 
+interface DraftSession {
+  id: string;
+  phase: string;
+  tournamentId: string | null;
+}
+
 export default function TeamLobby() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const [, setLocation] = useLocation();
@@ -53,6 +59,12 @@ export default function TeamLobby() {
     queryKey: ['/api/tournaments', tournamentId, 'ready-status'],
     refetchInterval: 2000,
     enabled: !!tournamentId,
+  });
+
+  const { data: draftSession } = useQuery<DraftSession>({
+    queryKey: ['/api/tournaments', tournamentId, 'draft'],
+    refetchInterval: 2000,
+    enabled: !!tournamentId && !!readyStatus?.bothReady,
   });
 
   const markReadyMutation = useMutation({
@@ -84,16 +96,16 @@ export default function TeamLobby() {
   });
 
   useEffect(() => {
-    if (readyStatus?.bothReady) {
+    if (draftSession && draftSession.phase !== 'waiting') {
       toast({
-        title: "Tüm takımlar hazır!",
+        title: "Draft başladı!",
         description: "Draft ekranına yönlendiriliyorsunuz...",
       });
       setTimeout(() => {
-        setLocation(`/draft-simulator?tournament=${tournamentId}&team=${teamSession?.teamColor}`);
-      }, 2000);
+        setLocation(`/draft-simulator?session=${draftSession.id}&team=${teamSession?.teamColor}`);
+      }, 1000);
     }
-  }, [readyStatus?.bothReady, tournamentId, teamSession?.teamColor, setLocation, toast]);
+  }, [draftSession?.phase, draftSession?.id, teamSession?.teamColor, setLocation, toast]);
 
   const handleLogout = () => {
     localStorage.removeItem("teamSession");
@@ -237,11 +249,29 @@ export default function TeamLobby() {
             </CardContent>
           </Card>
 
-          {readyStatus?.bothReady && (
+          {readyStatus?.bothReady && !draftSession && (
+            <div className="mt-6 text-center">
+              <div className="inline-flex items-center gap-2 bg-amber-900/50 text-amber-400 px-6 py-3 rounded-lg border border-amber-500">
+                <Clock className="w-5 h-5 animate-pulse" />
+                <span className="font-medium">Tüm takımlar hazır! Moderatörün draft'ı başlatması bekleniyor...</span>
+              </div>
+            </div>
+          )}
+          
+          {draftSession && draftSession.phase === 'waiting' && (
+            <div className="mt-6 text-center">
+              <div className="inline-flex items-center gap-2 bg-amber-900/50 text-amber-400 px-6 py-3 rounded-lg border border-amber-500">
+                <Clock className="w-5 h-5 animate-pulse" />
+                <span className="font-medium">Draft oluşturuldu! Moderatörün başlatması bekleniyor...</span>
+              </div>
+            </div>
+          )}
+          
+          {draftSession && draftSession.phase !== 'waiting' && (
             <div className="mt-6 text-center">
               <div className="inline-flex items-center gap-2 bg-green-900/50 text-green-400 px-6 py-3 rounded-lg border border-green-500">
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="font-medium">Tüm takımlar hazır! Draft başlatılıyor...</span>
+                <span className="font-medium">Draft başladı! Yönlendiriliyorsunuz...</span>
               </div>
             </div>
           )}

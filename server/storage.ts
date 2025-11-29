@@ -10,6 +10,7 @@ export interface IStorage {
   
   getDraftSession(id: string): Promise<DraftSession | undefined>;
   getDraftSessionByMatchId(matchId: string): Promise<DraftSession | undefined>;
+  getDraftSessionByTournamentId(tournamentId: string): Promise<DraftSession | undefined>;
   createDraftSession(session: InsertDraftSession): Promise<DraftSession>;
   updateDraftSession(id: string, updates: Partial<DraftSession>): Promise<DraftSession | undefined>;
   startDraft(id: string): Promise<DraftSession | undefined>;
@@ -129,6 +130,11 @@ export class DatabaseStorage implements IStorage {
 
   async getDraftSessionByMatchId(matchId: string): Promise<DraftSession | undefined> {
     const result = await db.select().from(draftSessions).where(eq(draftSessions.matchId, matchId));
+    return result[0];
+  }
+
+  async getDraftSessionByTournamentId(tournamentId: string): Promise<DraftSession | undefined> {
+    const result = await db.select().from(draftSessions).where(eq(draftSessions.tournamentId, tournamentId));
     return result[0];
   }
 

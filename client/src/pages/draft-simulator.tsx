@@ -32,6 +32,8 @@ export default function DraftSimulator() {
   const [timer, setTimer] = useState(30);
   const [draftSessionId, setDraftSessionId] = useState<string | null>(null);
   const [showStartModal, setShowStartModal] = useState(true);
+  const [userTeam, setUserTeam] = useState<string | null>(null);
+  const [isModerator, setIsModerator] = useState(false);
 
   // Fetch champions
   const { data: champions = [], isLoading: championsLoading } = useQuery<Champion[]>({
@@ -150,9 +152,9 @@ export default function DraftSimulator() {
 
   // Initialize draft session
   useEffect(() => {
-    // Check URL for sessionId parameter
     const urlParams = new URLSearchParams(window.location.search);
-    const sessionId = urlParams.get('sessionId');
+    const sessionId = urlParams.get('sessionId') || urlParams.get('session');
+    const teamParam = urlParams.get('team');
     
     if (sessionId) {
       setDraftSessionId(sessionId);
@@ -160,15 +162,16 @@ export default function DraftSimulator() {
     } else if (!draftSessionId) {
       createDraftMutation.mutate();
     }
-  }, []);
-
-  // Auto-start draft when coming from tournament
-  useEffect(() => {
-    if (draftSession && draftSession.phase === 'waiting' && draftSession.matchId && !showStartModal) {
-      // This is a tournament match draft, start automatically
-      startDraftMutation.mutate();
+    
+    if (teamParam) {
+      setUserTeam(teamParam);
     }
-  }, [draftSession, showStartModal]);
+    
+    const moderatorSession = localStorage.getItem("moderatorSession");
+    if (moderatorSession) {
+      setIsModerator(true);
+    }
+  }, []);
 
   // Redirect to tournament page when draft is completed
   useEffect(() => {
@@ -293,6 +296,19 @@ export default function DraftSimulator() {
     return [...draftSession.blueTeamPicks, ...draftSession.redTeamPicks];
   }, [draftSession]);
 
+  const canUserAct = useMemo(() => {
+    if (!draftSession) return false;
+    if (draftSession.phase === 'waiting' || draftSession.phase === 'completed') return false;
+    if (isModerator) return true;
+    if (!userTeam) return true;
+    return draftSession.currentTeam === userTeam;
+  }, [draftSession, userTeam, isModerator]);
+
+  const isUserTurn = useMemo(() => {
+    if (!draftSession || !userTeam) return false;
+    return draftSession.currentTeam === userTeam;
+  }, [draftSession, userTeam]);
+
   const handleStartDraft = () => {
     if (!draftSessionId) return;
     startDraftMutation.mutate();
@@ -309,6 +325,15 @@ export default function DraftSimulator() {
 
   const handlePickChampion = () => {
     if (!selectedChampion || !draftSession) return;
+    
+    if (!canUserAct) {
+      toast({
+        title: "Sıra sizde değil",
+        description: `Şu anda ${draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı'} takımın sırası.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     pickChampionMutation.mutate(selectedChampion.id);
     
@@ -321,6 +346,15 @@ export default function DraftSimulator() {
 
   const handleBanChampion = () => {
     if (!selectedChampion || !draftSession) return;
+    
+    if (!canUserAct) {
+      toast({
+        title: "Sıra sizde değil",
+        description: `Şu anda ${draftSession.currentTeam === 'blue' ? 'Mavi' : 'Kırmızı'} takımın sırası.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     banChampionMutation.mutate(selectedChampion.id);
     
@@ -399,6 +433,11 @@ export default function DraftSimulator() {
         onPickChampion={handlePickChampion}
         onBanChampion={handleBanChampion}
         onOpenStartModal={handleOpenStartModal}
+        onStartDraft={handleStartDraft}
+        canUserAct={canUserAct}
+        isUserTurn={isUserTurn}
+        userTeam={userTeam}
+        isModerator={isModerator}
       />
 
       <DraftStartModal
