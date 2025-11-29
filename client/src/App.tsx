@@ -5,8 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import DraftSimulator from "@/pages/draft-simulator";
 import Tournaments from "@/pages/tournaments";
+import AdminPage from "@/pages/admin";
 import NotFound from "@/pages/not-found";
-import { FooterAuthPanel } from "@/components/footer-auth-panel";
 
 function Router() {
   return (
@@ -14,6 +14,7 @@ function Router() {
       <Route path="/" component={Tournaments}/>
       <Route path="/draft-simulator" component={DraftSimulator}/>
       <Route path="/tournaments" component={Tournaments}/>
+      <Route path="/admin" component={AdminPage}/>
       <Route component={NotFound} />
     </Switch>
   );
@@ -25,10 +26,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
-          <div className="pb-32">
-            <Router />
-          </div>
-          <FooterAuthPanel />
+          <Router />
         </TooltipProvider>
       </QueryClientProvider>
     </div>
