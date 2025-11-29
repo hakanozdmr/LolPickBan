@@ -395,12 +395,49 @@ export class DatabaseStorage implements IStorage {
       .set(updates)
       .where(eq(matches.id, id))
       .returning();
-    return result[0];
+    
+    const updatedMatch = result[0];
+    if (updatedMatch && updatedMatch.status === 'completed') {
+      await this.createNextRoundIfNeeded(updatedMatch.tournamentId, updatedMatch.round);
+    }
+    
+    return updatedMatch;
   }
 
   async deleteMatch(id: string): Promise<boolean> {
     await db.delete(matches).where(eq(matches.id, id));
     return true;
+  }
+
+  async createNextRoundIfNeeded(tournamentId: string, currentRound: number): Promise<void> {
+    const currentMatches = await this.getMatches(tournamentId);
+    const roundMatches = currentMatches.filter(m => m.round === currentRound);
+    
+    const allCompleted = roundMatches.length > 0 && roundMatches.every(m => m.status === 'completed');
+    if (!allCompleted) return;
+    
+    const winners = roundMatches.filter(m => m.winnerId).map(m => ({ winnerId: m.winnerId, position: m.position }));
+    if (winners.length === 0) return;
+    
+    const nextRound = currentRound + 1;
+    const nextRoundMatches = await db.select().from(matches).where(
+      and(eq(matches.tournamentId, tournamentId), eq(matches.round, nextRound))
+    );
+    
+    if (nextRoundMatches.length > 0) return;
+    
+    for (let i = 0; i < winners.length; i += 2) {
+      if (winners[i + 1]) {
+        await this.createMatch({
+          tournamentId,
+          team1Id: winners[i].winnerId,
+          team2Id: winners[i + 1].winnerId,
+          round: nextRound,
+          position: Math.floor(i / 2),
+          status: 'pending',
+        });
+      }
+    }
   }
 
   async verifyAdminCredentials(username: string, password: string): Promise<AdminUser | null> {
