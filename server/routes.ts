@@ -291,6 +291,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Start a draft from a tournament match
   app.post("/api/matches/:matchId/draft", async (req, res) => {
     try {
+      // Check if draft session already exists (idempotent)
+      const existingDraft = await storage.getDraftSessionByMatchId(req.params.matchId);
+      if (existingDraft) {
+        res.status(200).json(existingDraft);
+        return;
+      }
+
       const match = await storage.getMatch(req.params.matchId);
       if (!match) {
         res.status(404).json({ message: "Match not found" });
