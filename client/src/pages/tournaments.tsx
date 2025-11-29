@@ -6,6 +6,7 @@ import { NavigationHeader } from "@/components/navigation-header";
 import { TournamentList } from "@/components/tournament-list";
 import { TournamentBracket } from "@/components/tournament-bracket";
 import { CreateTournamentModal } from "@/components/create-tournament-modal";
+import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Plus, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -71,7 +72,7 @@ export default function Tournaments() {
   }
 
   return (
-    <div className="min-h-screen lol-bg-dark text-white font-inter">
+    <div className="min-h-screen lol-bg-dark text-white font-inter flex flex-col">
       <NavigationHeader />
       
       <div className="lol-bg-darker border-b border-gray-700 px-6 py-4">
@@ -147,6 +148,8 @@ export default function Tournaments() {
         onCreateTournament={(data) => createTournamentMutation.mutate(data)}
         isLoading={createTournamentMutation.isPending}
       />
+
+      <Footer />
     </div>
   );
 }
