@@ -31,15 +31,20 @@ The application defines database schemas using **Drizzle ORM** with PostgreSQL a
 The schema uses Zod for runtime validation and type inference, ensuring type safety between the database layer and application logic.
 
 ### Authentication System
-The application includes a footer-based dual authentication system:
+The application includes a navigation-based dual authentication system:
 
-- **Admin Login**: Admins authenticate with username/password (default: admin/admin123)
+- **Admin Login** (via /admin page): Admins authenticate with username/password (default: admin/admin123)
+  - Accessed via "Admin Girişi" button in navigation header
+  - Dedicated page for admin login and code management
   - Can generate unique 8-character access codes for players
   - Session tokens stored in localStorage and validated via API
   
-- **Player Login**: Players authenticate using access codes
+- **Player Login** (via modal): Players authenticate using access codes
+  - Accessed via "Oyuncu Girişi" button in navigation header
+  - Opens a modal dialog for code entry
   - Codes are single-use and marked as used after successful login
   - Session persisted in localStorage for seamless experience
+  - Navigation button changes to "Giriş Yapıldı" when logged in
 
 ### Component Architecture
 The frontend is organized into several key component categories:
