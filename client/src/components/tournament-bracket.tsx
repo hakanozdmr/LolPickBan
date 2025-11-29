@@ -116,19 +116,34 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           winnerId,
-          status: 'completed',
-          completedAt: new Date().toISOString()
+          status: 'completed'
         }),
       });
-      if (!response.ok) throw new Error('Failed to set winner');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Kazanan belirlenemedi');
+      }
       return response.json();
     },
     onSuccess: (updatedMatch) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', tournament.id, 'matches'] });
+      queryClient.setQueryData(
+        ['/api/tournaments', tournament.id, 'matches'],
+        (oldMatches: Match[] | undefined) => {
+          if (!oldMatches) return [updatedMatch];
+          return oldMatches.map(m => m.id === updatedMatch.id ? updatedMatch : m);
+        }
+      );
       const winner = getTeamById(updatedMatch.winnerId);
       toast({
         title: "Kazanan Belirlendi",
         description: `${winner?.name} maçı kazandı!`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Hata",
+        description: error instanceof Error ? error.message : "Kazanan belirlenemedi",
+        variant: "destructive",
       });
     },
   });
