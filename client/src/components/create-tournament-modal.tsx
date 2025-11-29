@@ -1,46 +1,33 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Copy, Check, Users } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-interface TeamCodes {
-  blueCode: { code: string; teamName: string | null };
-  redCode: { code: string; teamName: string | null };
-}
+import { Trophy } from "lucide-react";
 
 interface CreateTournamentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateTournament: (data: any) => Promise<TeamCodes | null>;
+  onCreateTournament: (data: any) => Promise<void>;
   isLoading: boolean;
 }
 
 export function CreateTournamentModal({ isOpen, onClose, onCreateTournament, isLoading }: CreateTournamentModalProps) {
-  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     format: "single_elimination",
     maxTeams: 8,
-    blueTeamName: "",
-    redTeamName: "",
   });
-  const [teamCodes, setTeamCodes] = useState<TeamCodes | null>(null);
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
     
-    const codes = await onCreateTournament(formData);
-    if (codes) {
-      setTeamCodes(codes);
-    }
+    await onCreateTournament(formData);
+    handleClose();
   };
 
   const handleClose = () => {
@@ -49,106 +36,9 @@ export function CreateTournamentModal({ isOpen, onClose, onCreateTournament, isL
       description: "",
       format: "single_elimination",
       maxTeams: 8,
-      blueTeamName: "",
-      redTeamName: "",
     });
-    setTeamCodes(null);
-    setCopiedCode(null);
     onClose();
   };
-
-  const copyToClipboard = async (code: string) => {
-    await navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    toast({ title: "Kopyalandı!", description: "Kod panoya kopyalandı." });
-    setTimeout(() => setCopiedCode(null), 2000);
-  };
-
-  if (teamCodes) {
-    return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="lol-bg-darker border-gray-700 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 lol-text-gold">
-              <Trophy className="w-5 h-5" />
-              Turnuva Oluşturuldu!
-            </DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Aşağıdaki kodları takımlara gönderin
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="p-4 bg-blue-900/30 border border-blue-500 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-blue-400" />
-                <span className="text-blue-400 font-medium">
-                  {teamCodes.blueCode.teamName || "Mavi Takım"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-blue-900/50 px-3 py-2 rounded font-mono text-lg tracking-widest text-white">
-                  {teamCodes.blueCode.code}
-                </code>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => copyToClipboard(teamCodes.blueCode.code)}
-                  className="text-blue-400 hover:text-blue-300"
-                  data-testid="copy-blue-code"
-                >
-                  {copiedCode === teamCodes.blueCode.code ? (
-                    <Check className="w-4 h-4" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <div className="p-4 bg-red-900/30 border border-red-500 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-red-400" />
-                <span className="text-red-400 font-medium">
-                  {teamCodes.redCode.teamName || "Kırmızı Takım"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-red-900/50 px-3 py-2 rounded font-mono text-lg tracking-widest text-white">
-                  {teamCodes.redCode.code}
-                </code>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => copyToClipboard(teamCodes.redCode.code)}
-                  className="text-red-400 hover:text-red-300"
-                  data-testid="copy-red-code"
-                >
-                  {copiedCode === teamCodes.redCode.code ? (
-                    <Check className="w-4 h-4" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <p className="text-xs text-gray-400 text-center">
-              Bu kodları kaydedin! Takımlar bu kodları kullanarak bekleme odasına katılabilir.
-            </p>
-
-            <Button
-              onClick={handleClose}
-              className="w-full lol-bg-gold hover:lol-bg-accent text-black font-medium"
-              data-testid="close-codes-modal"
-            >
-              Tamam
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -189,35 +79,6 @@ export function CreateTournamentModal({ isOpen, onClose, onCreateTournament, isL
               rows={2}
               data-testid="tournament-description-input"
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="blue-team-name" className="text-sm font-medium text-blue-400">
-                Mavi Takım Adı
-              </Label>
-              <Input
-                id="blue-team-name"
-                value={formData.blueTeamName}
-                onChange={(e) => setFormData({ ...formData, blueTeamName: e.target.value })}
-                placeholder="Mavi Takım"
-                className="lol-bg-dark border-blue-600/50 text-white"
-                data-testid="blue-team-name-input"
-              />
-            </div>
-            <div>
-              <Label htmlFor="red-team-name" className="text-sm font-medium text-red-400">
-                Kırmızı Takım Adı
-              </Label>
-              <Input
-                id="red-team-name"
-                value={formData.redTeamName}
-                onChange={(e) => setFormData({ ...formData, redTeamName: e.target.value })}
-                placeholder="Kırmızı Takım"
-                className="lol-bg-dark border-red-600/50 text-white"
-                data-testid="red-team-name-input"
-              />
-            </div>
           </div>
 
           <div>

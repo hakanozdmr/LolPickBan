@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Tournament, Team, Match } from "@shared/schema";
 import { NavigationHeader } from "@/components/navigation-header";
 import { TournamentList } from "@/components/tournament-list";
@@ -11,38 +11,30 @@ import { Button } from "@/components/ui/button";
 import { Plus, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-interface TeamCodes {
-  blueCode: { code: string; teamName: string | null };
-  redCode: { code: string; teamName: string | null };
-}
-
 export default function Tournaments() {
   const { toast } = useToast();
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   
   const isAdmin = !!localStorage.getItem("adminSession");
-  const isModerator = !!localStorage.getItem("playerSession");
+  const isModerator = !!localStorage.getItem("moderatorSession");
   const canCreateTournament = isAdmin || isModerator;
 
-  // Fetch tournaments
   const { data: tournaments = [], isLoading: tournamentsLoading } = useQuery<Tournament[]>({
     queryKey: ['/api/tournaments'],
   });
 
-  // Fetch teams for selected tournament
   const { data: teams = [] } = useQuery<Team[]>({
     queryKey: ['/api/tournaments', selectedTournament?.id, 'teams'],
     enabled: !!selectedTournament,
   });
 
-  // Fetch matches for selected tournament
   const { data: matches = [] } = useQuery<Match[]>({
     queryKey: ['/api/tournaments', selectedTournament?.id, 'matches'],
     enabled: !!selectedTournament,
   });
 
-  const handleCreateTournament = async (tournamentData: any): Promise<TeamCodes | null> => {
+  const handleCreateTournament = async (tournamentData: any): Promise<void> => {
     try {
       const response = await fetch('/api/tournaments', {
         method: 'POST',
@@ -58,18 +50,6 @@ export default function Tournaments() {
       if (!response.ok) throw new Error('Failed to create tournament');
       const tournament: Tournament = await response.json();
 
-      const codesResponse = await fetch(`/api/tournaments/${tournament.id}/team-codes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          blueTeamName: tournamentData.blueTeamName || undefined,
-          redTeamName: tournamentData.redTeamName || undefined,
-        }),
-      });
-
-      if (!codesResponse.ok) throw new Error('Failed to create team codes');
-      const codes = await codesResponse.json();
-
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
       setSelectedTournament(tournament);
       
@@ -77,18 +57,12 @@ export default function Tournaments() {
         title: "Turnuva Oluşturuldu",
         description: `${tournament.name} başarıyla oluşturuldu.`,
       });
-
-      return {
-        blueCode: { code: codes.blueCode.code, teamName: codes.blueCode.teamName },
-        redCode: { code: codes.redCode.code, teamName: codes.redCode.teamName },
-      };
     } catch (error) {
       toast({
         title: "Hata",
         description: "Turnuva oluşturulurken bir hata oluştu.",
         variant: "destructive",
       });
-      return null;
     }
   };
 
@@ -97,7 +71,7 @@ export default function Tournaments() {
   const wrappedCreateTournament = async (data: any) => {
     setIsCreating(true);
     try {
-      return await handleCreateTournament(data);
+      await handleCreateTournament(data);
     } finally {
       setIsCreating(false);
     }
