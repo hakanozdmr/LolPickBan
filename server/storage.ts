@@ -1,5 +1,5 @@
-import { type Champion, type DraftSession, type InsertDraftSession, type Tournament, type Team, type Match, type InsertTournament, type InsertTeam, type InsertMatch } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { type Champion, type DraftSession, type InsertDraftSession, type Tournament, type Team, type Match, type InsertTournament, type InsertTeam, type InsertMatch, type AdminUser, type PlayerAccessCode, type InsertAdminUser, type InsertPlayerAccessCode } from "@shared/schema";
+import { randomUUID, createHash } from "crypto";
 import fs from "fs";
 import path from "path";
 
@@ -36,6 +36,31 @@ export interface IStorage {
   createMatch(match: InsertMatch): Promise<Match>;
   updateMatch(id: string, updates: Partial<Match>): Promise<Match | undefined>;
   deleteMatch(id: string): Promise<boolean>;
+  
+  // Admin Auth
+  verifyAdminCredentials(username: string, password: string): Promise<AdminUser | null>;
+  createAdminSession(adminId: string): Promise<string>;
+  validateAdminSession(token: string): Promise<AdminUser | null>;
+  invalidateAdminSession(token: string): Promise<boolean>;
+  
+  // Player Access Codes
+  createAccessCode(adminId: string): Promise<PlayerAccessCode>;
+  getAccessCodes(): Promise<PlayerAccessCode[]>;
+  validateAccessCode(code: string): Promise<PlayerAccessCode | null>;
+  markAccessCodeUsed(id: string): Promise<boolean>;
+}
+
+function hashPassword(password: string): string {
+  return createHash('sha256').update(password).digest('hex');
+}
+
+function generateAccessCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
 }
 
 export class MemStorage implements IStorage {
@@ -44,9 +69,24 @@ export class MemStorage implements IStorage {
   private tournaments: Map<string, Tournament> = new Map();
   private teams: Map<string, Team> = new Map();
   private matches: Map<string, Match> = new Map();
+  private adminUsers: Map<string, AdminUser> = new Map();
+  private adminSessions: Map<string, string> = new Map();
+  private playerAccessCodes: Map<string, PlayerAccessCode> = new Map();
 
   constructor() {
     this.loadChampions();
+    this.seedAdminUser();
+  }
+
+  private seedAdminUser() {
+    const adminId = randomUUID();
+    const admin: AdminUser = {
+      id: adminId,
+      username: "admin",
+      passwordHash: hashPassword("admin123"),
+      createdAt: new Date(),
+    };
+    this.adminUsers.set(adminId, admin);
   }
 
   private loadChampions() {
@@ -384,6 +424,71 @@ export class MemStorage implements IStorage {
 
   async deleteMatch(id: string): Promise<boolean> {
     return this.matches.delete(id);
+  }
+
+  // Admin Auth methods
+  async verifyAdminCredentials(username: string, password: string): Promise<AdminUser | null> {
+    const admins = Array.from(this.adminUsers.values());
+    const admin = admins.find(a => a.username === username);
+    if (!admin) return null;
+    
+    const passwordHash = hashPassword(password);
+    if (admin.passwordHash !== passwordHash) return null;
+    
+    return admin;
+  }
+
+  async createAdminSession(adminId: string): Promise<string> {
+    const token = randomUUID();
+    this.adminSessions.set(token, adminId);
+    return token;
+  }
+
+  async validateAdminSession(token: string): Promise<AdminUser | null> {
+    const adminId = this.adminSessions.get(token);
+    if (!adminId) return null;
+    return this.adminUsers.get(adminId) || null;
+  }
+
+  async invalidateAdminSession(token: string): Promise<boolean> {
+    return this.adminSessions.delete(token);
+  }
+
+  // Player Access Code methods
+  async createAccessCode(adminId: string): Promise<PlayerAccessCode> {
+    const id = randomUUID();
+    const code = generateAccessCode();
+    const accessCode: PlayerAccessCode = {
+      id,
+      code,
+      issuedByAdminId: adminId,
+      issuedAt: new Date(),
+      used: false,
+      usedAt: null,
+    };
+    this.playerAccessCodes.set(id, accessCode);
+    return accessCode;
+  }
+
+  async getAccessCodes(): Promise<PlayerAccessCode[]> {
+    return Array.from(this.playerAccessCodes.values()).sort((a, b) => 
+      new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime()
+    );
+  }
+
+  async validateAccessCode(code: string): Promise<PlayerAccessCode | null> {
+    const codes = Array.from(this.playerAccessCodes.values());
+    return codes.find(c => c.code === code && !c.used) || null;
+  }
+
+  async markAccessCodeUsed(id: string): Promise<boolean> {
+    const accessCode = this.playerAccessCodes.get(id);
+    if (!accessCode) return false;
+    
+    accessCode.used = true;
+    accessCode.usedAt = new Date();
+    this.playerAccessCodes.set(id, accessCode);
+    return true;
   }
 }
 
