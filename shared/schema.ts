@@ -69,6 +69,14 @@ export const adminUsers = pgTable("admin_users", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+export const moderatorUsers = pgTable("moderator_users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  createdByAdminId: varchar("created_by_admin_id"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
 export const playerAccessCodes = pgTable("player_access_codes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   code: text("code").notNull().unique(),
@@ -110,6 +118,10 @@ export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
   id: true,
   createdAt: true,
 });
+export const insertModeratorUserSchema = createInsertSchema(moderatorUsers).omit({
+  id: true,
+  createdAt: true,
+});
 export const insertPlayerAccessCodeSchema = createInsertSchema(playerAccessCodes).omit({
   id: true,
   issuedAt: true,
@@ -128,6 +140,16 @@ export const adminLoginSchema = z.object({
   password: z.string().min(1, "Şifre gerekli"),
 });
 
+export const moderatorLoginSchema = z.object({
+  username: z.string().min(1, "Kullanıcı adı gerekli"),
+  password: z.string().min(1, "Şifre gerekli"),
+});
+
+export const moderatorRegisterSchema = z.object({
+  username: z.string().min(3, "Kullanıcı adı en az 3 karakter olmalı"),
+  password: z.string().min(6, "Şifre en az 6 karakter olmalı"),
+});
+
 export const playerLoginSchema = z.object({
   code: z.string().min(1, "Giriş kodu gerekli"),
 });
@@ -144,9 +166,13 @@ export type Match = typeof matches.$inferSelect;
 export type InsertMatch = z.infer<typeof insertMatchSchema>;
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+export type ModeratorUser = typeof moderatorUsers.$inferSelect;
+export type InsertModeratorUser = z.infer<typeof insertModeratorUserSchema>;
 export type PlayerAccessCode = typeof playerAccessCodes.$inferSelect;
 export type InsertPlayerAccessCode = z.infer<typeof insertPlayerAccessCodeSchema>;
 export type TournamentTeamCode = typeof tournamentTeamCodes.$inferSelect;
 export type InsertTournamentTeamCode = z.infer<typeof insertTournamentTeamCodeSchema>;
 export type AdminLogin = z.infer<typeof adminLoginSchema>;
+export type ModeratorLogin = z.infer<typeof moderatorLoginSchema>;
+export type ModeratorRegister = z.infer<typeof moderatorRegisterSchema>;
 export type PlayerLogin = z.infer<typeof playerLoginSchema>;
