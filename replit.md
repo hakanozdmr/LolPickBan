@@ -25,8 +25,21 @@ The application defines database schemas using **Drizzle ORM** with PostgreSQL a
 
 - **Champions table**: Stores champion metadata including ID, name, title, roles, classes, and image URLs
 - **Draft Sessions table**: Tracks draft state including current phase, active team, timer, and arrays of picked/banned champions for both teams
+- **Admin Users table**: Stores admin credentials with hashed passwords for authentication
+- **Player Access Codes table**: Stores generated access codes for player login with usage tracking
 
 The schema uses Zod for runtime validation and type inference, ensuring type safety between the database layer and application logic.
+
+### Authentication System
+The application includes a footer-based dual authentication system:
+
+- **Admin Login**: Admins authenticate with username/password (default: admin/admin123)
+  - Can generate unique 8-character access codes for players
+  - Session tokens stored in localStorage and validated via API
+  
+- **Player Login**: Players authenticate using access codes
+  - Codes are single-use and marked as used after successful login
+  - Session persisted in localStorage for seamless experience
 
 ### Component Architecture
 The frontend is organized into several key component categories:
