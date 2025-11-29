@@ -31,19 +31,34 @@ The application defines database schemas using **Drizzle ORM** with PostgreSQL a
 The schema uses Zod for runtime validation and type inference, ensuring type safety between the database layer and application logic.
 
 ### Authentication System
-The application includes a dual authentication system:
+The application includes a three-tier authentication system:
 
-- **Player Login** (via login gate): First-time visitors see a login screen
-  - Displayed before any protected content (tournaments, draft simulator)
-  - Requires 8-character access code from admin
+- **Admin** (via /admin page): Top-level administrators
+  - Authenticate with username/password (default: admin/admin123)
+  - Accessed via "Admin Girişi" button in the footer
+  - Can generate unique 8-character moderator access codes
+  - Session tokens stored in localStorage and validated via API
+
+- **Moderator Login** (via login gate): Tournament organizers
+  - First-time visitors see a tabbed login screen (Moderator/Team)
+  - Moderator tab requires 8-character access code from admin
   - Codes are single-use and marked as used after successful login
   - Session persisted in localStorage for seamless experience
-  
-- **Admin Login** (via /admin page): Admins authenticate with username/password (default: admin/admin123)
-  - Accessed via "Admin Girişi" button in the footer
-  - Dedicated page for admin login and code management
-  - Can generate unique 8-character access codes for players
-  - Session tokens stored in localStorage and validated via API
+  - Can create tournaments and generate team codes
+
+- **Team Login** (via login gate): Team participants
+  - Team tab allows login with tournament-specific team codes
+  - Each tournament auto-generates unique blue and red team codes
+  - Teams are redirected to a waiting lobby after login
+  - Teams mark themselves as "Ready" in the lobby
+  - When both teams are ready, auto-redirect to draft simulator
+
+### Tournament Team Codes System
+- **tournamentTeamCodes table**: Stores team codes per tournament
+  - Links to tournament, stores team color (blue/red)
+  - Tracks team name, ready status, and join timestamp
+- **Ready Status Polling**: Team lobby polls every 2 seconds for status
+- **Auto-Transition**: When both teams marked ready, automatic redirect to draft
 
 ### Component Architecture
 The frontend is organized into several key component categories:
