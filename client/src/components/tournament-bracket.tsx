@@ -48,12 +48,6 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
     queryKey: ['/api/tournaments', tournament.id, 'draft'],
   });
 
-  const { data: teamCodes } = useQuery<Array<{code: string; teamColor: string; teamName: string | null}>>({
-    queryKey: ['/api/tournaments', tournament.id, 'team-codes'],
-    refetchInterval: 1000,
-  });
-
-  const hasTeamCodes = teamCodes && teamCodes.length >= 2;
 
   const addTeamMutation = useMutation({
     mutationFn: async (teamData: any) => {
@@ -577,7 +571,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                    match.status === 'in_progress' ? 'Devam Ediyor' : 'Tamamlandı'}
                                 </Badge>
                                 
-                                {match.status === 'pending' && team1 && team2 && !hasTeamCodes && (
+                                {match.status === 'pending' && team1 && team2 && (
                                   <Button 
                                     size="sm"
                                     onClick={() => setStartDraftMatch(match)}
@@ -587,65 +581,6 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                     <Play className="w-3 h-3 mr-1" />
                                     Draft Başlat
                                   </Button>
-                                )}
-
-                                {match.status === 'pending' && hasTeamCodes && (
-                                  <div className="space-y-2">
-                                    {(readyStatus?.blueTeam || readyStatus?.redTeam) ? (
-                                      <div className="flex items-center gap-2 text-xs">
-                                        <div className={`flex items-center gap-1 ${readyStatus?.blueTeam?.isReady ? 'text-green-400' : 'text-yellow-400'}`}>
-                                          {readyStatus?.blueTeam?.isReady ? <Check className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                                          <span>Mavi</span>
-                                        </div>
-                                        <div className={`flex items-center gap-1 ${readyStatus?.redTeam?.isReady ? 'text-green-400' : 'text-yellow-400'}`}>
-                                          {readyStatus?.redTeam?.isReady ? <Check className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                                          <span>Kırmızı</span>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div className="text-xs text-gray-400">
-                                        Takımlar bekleniyor...
-                                      </div>
-                                    )}
-                                    {readyStatus?.bothReady ? (
-                                      <Button 
-                                        size="sm"
-                                        onClick={async () => {
-                                          try {
-                                            const response = await fetch(`/api/matches/${match.id}/draft`, {
-                                              method: 'POST',
-                                              headers: { 'Content-Type': 'application/json' },
-                                              body: JSON.stringify({
-                                                blueTeamName: team1?.name || 'Mavi Takım',
-                                                redTeamName: team2?.name || 'Kırmızı Takım',
-                                              }),
-                                            });
-                                            if (!response.ok) throw new Error('Failed to create draft');
-                                            const draft = await response.json();
-                                            setLocation(`/draft-simulator?session=${draft.id}`);
-                                          } catch (error) {
-                                            console.error('Error navigating to draft:', error);
-                                          }
-                                        }}
-                                        className="lol-bg-gold hover:lol-bg-accent text-black text-xs w-full"
-                                        data-testid={`go-to-draft-${match.id}`}
-                                      >
-                                        <Play className="w-3 h-3 mr-1" />
-                                        Draft'a Git
-                                      </Button>
-                                    ) : (
-                                      <Button 
-                                        size="sm"
-                                        onClick={() => setStartDraftMatch(match)}
-                                        variant="outline"
-                                        className="border-gray-600 text-gray-300 hover:text-white text-xs w-full"
-                                        data-testid={`show-codes-${match.id}`}
-                                      >
-                                        <Users className="w-3 h-3 mr-1" />
-                                        Kodları Göster
-                                      </Button>
-                                    )}
-                                  </div>
                                 )}
 
                                 {match.status === 'in_progress' && draftSession && draftSession.phase === 'waiting' && (
