@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Play, Users, Plus, Gamepad2, Shield, Sword, Eye } from "lucide-react";
 import { useState } from "react";
 import { AddTeamModal } from "@/components/add-team-modal";
+import { StartDraftModal } from "@/components/start-draft-modal";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +21,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
   const { toast } = useToast();
   const [showAddTeamModal, setShowAddTeamModal] = useState(false);
   const [draftModalMatchId, setDraftModalMatchId] = useState<string | null>(null);
+  const [startDraftMatch, setStartDraftMatch] = useState<Match | null>(null);
 
   const addTeamMutation = useMutation({
     mutationFn: async (teamData: any) => {
@@ -80,24 +82,6 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
     },
   });
 
-  const startDraftMutation = useMutation({
-    mutationFn: async (matchId: string) => {
-      const response = await fetch(`/api/matches/${matchId}/draft`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to start draft');
-      return response.json();
-    },
-    onSuccess: (draftSession) => {
-      toast({
-        title: "Draft Başlatıldı",
-        description: "Maç için draft oturumu başlatıldı.",
-      });
-      // Navigate to draft page with the session
-      window.location.href = `/draft-simulator?sessionId=${draftSession.id}`;
-    },
-  });
 
   const setWinnerMutation = useMutation({
     mutationFn: async ({ matchId, winnerId }: { matchId: string; winnerId: string }) => {
@@ -564,8 +548,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                 {match.status === 'pending' && team1 && team2 && (
                                   <Button 
                                     size="sm"
-                                    onClick={() => startDraftMutation.mutate(match.id)}
-                                    disabled={startDraftMutation.isPending}
+                                    onClick={() => setStartDraftMatch(match)}
                                     className="lol-bg-gold hover:lol-bg-accent text-black text-xs"
                                     data-testid={`start-draft-${match.id}`}
                                   >
@@ -628,6 +611,23 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
           matchId={draftModalMatchId}
           isOpen={!!draftModalMatchId}
           onClose={() => setDraftModalMatchId(null)}
+        />
+      )}
+
+      {/* Start Draft Modal */}
+      {startDraftMatch && (
+        <StartDraftModal
+          isOpen={!!startDraftMatch}
+          onClose={() => setStartDraftMatch(null)}
+          tournamentId={tournament.id}
+          matchId={startDraftMatch.id}
+          team1Name={getTeamById(startDraftMatch.team1Id)?.name}
+          team2Name={getTeamById(startDraftMatch.team2Id)?.name}
+          onDraftStarted={(draftSessionId) => {
+            setStartDraftMatch(null);
+            queryClient.invalidateQueries({ queryKey: ['/api/tournaments', tournament.id, 'matches'] });
+            window.location.href = `/draft-simulator?sessionId=${draftSessionId}`;
+          }}
         />
       )}
     </div>
