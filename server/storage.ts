@@ -503,6 +503,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTournamentTeamCodes(tournamentId: string, blueTeamName?: string, redTeamName?: string): Promise<{ blueCode: TournamentTeamCode, redCode: TournamentTeamCode }> {
+    await db.delete(tournamentTeamCodes).where(eq(tournamentTeamCodes.tournamentId, tournamentId));
+
     const blueId = randomUUID();
     const redId = randomUUID();
     const now = new Date();

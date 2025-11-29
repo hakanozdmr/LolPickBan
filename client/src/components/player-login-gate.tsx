@@ -72,6 +72,7 @@ export function PlayerLoginGate({ children }: PlayerLoginGateProps) {
     },
     onSuccess: (data: TeamLoginResponse) => {
       localStorage.setItem("teamSession", JSON.stringify(data));
+      setIsLoggedIn(true);
       toast({ 
         title: "Takım girişi başarılı", 
         description: `${data.teamColor === "blue" ? "Mavi" : "Kırmızı"} takım olarak giriş yaptınız!` 
