@@ -443,6 +443,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Team Login with Team Code
+  app.post("/api/auth/team/login", async (req, res) => {
+    try {
+      const { code } = req.body;
+      if (!code) {
+        res.status(400).json({ message: "Kod gerekli" });
+        return;
+      }
+
+      const teamCode = await storage.validateTeamCode(code);
+      
+      if (!teamCode) {
+        res.status(401).json({ message: "Geçersiz takım kodu" });
+        return;
+      }
+
+      // Get tournament info
+      const tournament = await storage.getTournament(teamCode.tournamentId);
+      
+      res.json({ 
+        teamCodeId: teamCode.id,
+        tournamentId: teamCode.tournamentId,
+        tournamentName: tournament?.name || "Turnuva",
+        teamColor: teamCode.teamColor,
+        teamName: teamCode.teamName,
+        isReady: teamCode.isReady,
+        message: "Takım girişi başarılı"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Giriş yapılamadı" });
+    }
+  });
+
+  // Get tournament team codes (Admin/Moderator only)
+  app.get("/api/tournaments/:tournamentId/team-codes", async (req, res) => {
+    try {
+      const codes = await storage.getTournamentTeamCodes(req.params.tournamentId);
+      res.json(codes);
+    } catch (error) {
+      res.status(500).json({ message: "Takım kodları getirilemedi" });
+    }
+  });
+
+  // Create team codes for tournament
+  app.post("/api/tournaments/:tournamentId/team-codes", async (req, res) => {
+    try {
+      const { blueTeamName, redTeamName } = req.body;
+      const codes = await storage.createTournamentTeamCodes(
+        req.params.tournamentId,
+        blueTeamName,
+        redTeamName
+      );
+      res.status(201).json(codes);
+    } catch (error) {
+      res.status(500).json({ message: "Takım kodları oluşturulamadı" });
+    }
+  });
+
+  // Mark team as ready
+  app.post("/api/team-codes/:id/ready", async (req, res) => {
+    try {
+      const teamCode = await storage.markTeamReady(req.params.id);
+      
+      if (!teamCode) {
+        res.status(404).json({ message: "Takım kodu bulunamadı" });
+        return;
+      }
+
+      // Check if both teams are ready
+      const bothReady = await storage.checkBothTeamsReady(teamCode.tournamentId);
+      
+      res.json({ 
+        teamCode,
+        bothTeamsReady: bothReady
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Hazır durumu güncellenemedi" });
+    }
+  });
+
+  // Get team ready status for a tournament
+  app.get("/api/tournaments/:tournamentId/ready-status", async (req, res) => {
+    try {
+      const codes = await storage.getTournamentTeamCodes(req.params.tournamentId);
+      const blueTeam = codes.find(c => c.teamColor === "blue");
+      const redTeam = codes.find(c => c.teamColor === "red");
+      
+      res.json({
+        blueTeam: blueTeam ? {
+          teamName: blueTeam.teamName,
+          isReady: blueTeam.isReady,
+          joinedAt: blueTeam.joinedAt
+        } : null,
+        redTeam: redTeam ? {
+          teamName: redTeam.teamName,
+          isReady: redTeam.isReady,
+          joinedAt: redTeam.joinedAt
+        } : null,
+        bothReady: blueTeam?.isReady && redTeam?.isReady
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Durum getirilemedi" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
