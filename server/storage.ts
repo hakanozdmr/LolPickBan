@@ -1,4 +1,4 @@
-import { type Champion, type DraftSession, type InsertDraftSession, type Tournament, type Team, type Match, type InsertTournament, type InsertTeam, type InsertMatch, type AdminUser, type PlayerAccessCode, type InsertAdminUser, type InsertPlayerAccessCode } from "@shared/schema";
+import { type Champion, type DraftSession, type InsertDraftSession, type Tournament, type Team, type Match, type InsertTournament, type InsertTeam, type InsertMatch, type AdminUser, type PlayerAccessCode, type InsertAdminUser, type InsertPlayerAccessCode, type TournamentTeamCode, type InsertTournamentTeamCode } from "@shared/schema";
 import { randomUUID, createHash } from "crypto";
 import fs from "fs";
 import path from "path";
@@ -48,6 +48,13 @@ export interface IStorage {
   getAccessCodes(): Promise<PlayerAccessCode[]>;
   validateAccessCode(code: string): Promise<PlayerAccessCode | null>;
   markAccessCodeUsed(id: string): Promise<boolean>;
+  
+  // Tournament Team Codes
+  createTournamentTeamCodes(tournamentId: string, blueTeamName?: string, redTeamName?: string): Promise<{ blueCode: TournamentTeamCode, redCode: TournamentTeamCode }>;
+  getTournamentTeamCodes(tournamentId: string): Promise<TournamentTeamCode[]>;
+  validateTeamCode(code: string): Promise<TournamentTeamCode | null>;
+  markTeamReady(id: string): Promise<TournamentTeamCode | null>;
+  checkBothTeamsReady(tournamentId: string): Promise<boolean>;
 }
 
 function hashPassword(password: string): string {
@@ -72,6 +79,7 @@ export class MemStorage implements IStorage {
   private adminUsers: Map<string, AdminUser> = new Map();
   private adminSessions: Map<string, string> = new Map();
   private playerAccessCodes: Map<string, PlayerAccessCode> = new Map();
+  private tournamentTeamCodes: Map<string, TournamentTeamCode> = new Map();
 
   constructor() {
     this.loadChampions();
@@ -489,6 +497,66 @@ export class MemStorage implements IStorage {
     accessCode.usedAt = new Date();
     this.playerAccessCodes.set(id, accessCode);
     return true;
+  }
+
+  // Tournament Team Codes methods
+  async createTournamentTeamCodes(tournamentId: string, blueTeamName?: string, redTeamName?: string): Promise<{ blueCode: TournamentTeamCode, redCode: TournamentTeamCode }> {
+    const blueId = randomUUID();
+    const redId = randomUUID();
+    const now = new Date();
+
+    const blueCode: TournamentTeamCode = {
+      id: blueId,
+      tournamentId,
+      teamColor: "blue",
+      code: generateAccessCode(),
+      teamName: blueTeamName || null,
+      isReady: false,
+      joinedAt: null,
+      createdAt: now,
+    };
+
+    const redCode: TournamentTeamCode = {
+      id: redId,
+      tournamentId,
+      teamColor: "red",
+      code: generateAccessCode(),
+      teamName: redTeamName || null,
+      isReady: false,
+      joinedAt: null,
+      createdAt: now,
+    };
+
+    this.tournamentTeamCodes.set(blueId, blueCode);
+    this.tournamentTeamCodes.set(redId, redCode);
+
+    return { blueCode, redCode };
+  }
+
+  async getTournamentTeamCodes(tournamentId: string): Promise<TournamentTeamCode[]> {
+    return Array.from(this.tournamentTeamCodes.values())
+      .filter(code => code.tournamentId === tournamentId);
+  }
+
+  async validateTeamCode(code: string): Promise<TournamentTeamCode | null> {
+    const codes = Array.from(this.tournamentTeamCodes.values());
+    return codes.find(c => c.code === code) || null;
+  }
+
+  async markTeamReady(id: string): Promise<TournamentTeamCode | null> {
+    const teamCode = this.tournamentTeamCodes.get(id);
+    if (!teamCode) return null;
+
+    teamCode.isReady = true;
+    teamCode.joinedAt = new Date();
+    this.tournamentTeamCodes.set(id, teamCode);
+    return teamCode;
+  }
+
+  async checkBothTeamsReady(tournamentId: string): Promise<boolean> {
+    const codes = await this.getTournamentTeamCodes(tournamentId);
+    if (codes.length < 2) return false;
+    return codes.every(c => c.isReady);
   }
 }
 

@@ -78,6 +78,17 @@ export const playerAccessCodes = pgTable("player_access_codes", {
   usedAt: timestamp("used_at"),
 });
 
+export const tournamentTeamCodes = pgTable("tournament_team_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tournamentId: varchar("tournament_id").notNull(),
+  teamColor: text("team_color").notNull(), // "blue" or "red"
+  code: text("code").notNull().unique(),
+  teamName: text("team_name"),
+  isReady: boolean("is_ready").notNull().default(false),
+  joinedAt: timestamp("joined_at"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
 export const insertChampionSchema = createInsertSchema(champions);
 export const insertDraftSessionSchema = createInsertSchema(draftSessions).omit({
   id: true,
@@ -105,6 +116,12 @@ export const insertPlayerAccessCodeSchema = createInsertSchema(playerAccessCodes
   used: true,
   usedAt: true,
 });
+export const insertTournamentTeamCodeSchema = createInsertSchema(tournamentTeamCodes).omit({
+  id: true,
+  isReady: true,
+  joinedAt: true,
+  createdAt: true,
+});
 
 export const adminLoginSchema = z.object({
   username: z.string().min(1, "Kullanıcı adı gerekli"),
@@ -129,5 +146,7 @@ export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type PlayerAccessCode = typeof playerAccessCodes.$inferSelect;
 export type InsertPlayerAccessCode = z.infer<typeof insertPlayerAccessCodeSchema>;
+export type TournamentTeamCode = typeof tournamentTeamCodes.$inferSelect;
+export type InsertTournamentTeamCode = z.infer<typeof insertTournamentTeamCodeSchema>;
 export type AdminLogin = z.infer<typeof adminLoginSchema>;
 export type PlayerLogin = z.infer<typeof playerLoginSchema>;
