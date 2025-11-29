@@ -50,7 +50,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
 
   const { data: teamCodes } = useQuery<Array<{code: string; teamColor: string; teamName: string | null}>>({
     queryKey: ['/api/tournaments', tournament.id, 'team-codes'],
-    refetchInterval: 3000,
+    refetchInterval: 1000,
   });
 
   const hasTeamCodes = teamCodes && teamCodes.length >= 2;

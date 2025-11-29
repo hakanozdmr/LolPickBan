@@ -44,6 +44,7 @@ export default function DraftSimulator() {
   const { data: draftSession, isLoading: draftLoading } = useQuery<DraftSession>({
     queryKey: ['/api/draft-sessions', draftSessionId],
     enabled: !!draftSessionId,
+    refetchInterval: 1000,
   });
 
   // Create draft session mutation
