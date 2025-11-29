@@ -55,7 +55,7 @@ export function StartDraftModal({
   const fetchExistingCodes = async () => {
     setStep('loading');
     try {
-      const response = await fetch(`/api/tournaments/${tournamentId}/team-codes`);
+      const response = await fetch(`/api/matches/${matchId}/team-codes`);
       if (response.ok) {
         const codes = await response.json();
         if (codes && codes.length >= 2) {
@@ -68,7 +68,7 @@ export function StartDraftModal({
             });
             setStep('codes');
             
-            const draftResponse = await fetch(`/api/tournaments/${tournamentId}/draft`);
+            const draftResponse = await fetch(`/api/matches/${matchId}/draft`);
             if (draftResponse.ok) {
               const draftData = await draftResponse.json();
               setDraftSessionId(draftData.id);

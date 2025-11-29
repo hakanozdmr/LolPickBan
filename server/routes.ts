@@ -602,6 +602,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get team codes by match ID
+  app.get("/api/matches/:matchId/team-codes", async (req, res) => {
+    try {
+      const codes = await storage.getTeamCodesByMatchId(req.params.matchId);
+      res.json(codes);
+    } catch (error) {
+      res.status(500).json({ message: "Takım kodları getirilemedi" });
+    }
+  });
+
   // Get tournament team codes (Admin/Moderator only)
   app.get("/api/tournaments/:tournamentId/team-codes", async (req, res) => {
     try {

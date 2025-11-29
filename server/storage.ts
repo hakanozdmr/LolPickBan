@@ -54,6 +54,7 @@ export interface IStorage {
   
   createTournamentTeamCodes(tournamentId: string, blueTeamName?: string, redTeamName?: string): Promise<{ blueCode: TournamentTeamCode, redCode: TournamentTeamCode }>;
   getTournamentTeamCodes(tournamentId: string): Promise<TournamentTeamCode[]>;
+  getTeamCodesByMatchId(matchId: string): Promise<TournamentTeamCode[]>;
   validateTeamCode(code: string): Promise<TournamentTeamCode | null>;
   markTeamReady(id: string): Promise<TournamentTeamCode | null>;
   checkBothTeamsReady(tournamentId: string): Promise<boolean>;
@@ -545,6 +546,12 @@ export class DatabaseStorage implements IStorage {
 
   async getTournamentTeamCodes(tournamentId: string): Promise<TournamentTeamCode[]> {
     return db.select().from(tournamentTeamCodes).where(eq(tournamentTeamCodes.tournamentId, tournamentId));
+  }
+
+  async getTeamCodesByMatchId(matchId: string): Promise<TournamentTeamCode[]> {
+    const match = await this.getMatch(matchId);
+    if (!match) return [];
+    return this.getTournamentTeamCodes(match.tournamentId);
   }
 
   async validateTeamCode(code: string): Promise<TournamentTeamCode | null> {
