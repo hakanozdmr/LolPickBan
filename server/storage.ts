@@ -410,33 +410,42 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createNextRoundIfNeeded(tournamentId: string, currentRound: number): Promise<void> {
-    const currentMatches = await this.getMatches(tournamentId);
-    const roundMatches = currentMatches.filter(m => m.round === currentRound);
-    
-    const allCompleted = roundMatches.length > 0 && roundMatches.every(m => m.status === 'completed');
-    if (!allCompleted) return;
-    
-    const winners = roundMatches.filter(m => m.winnerId).map(m => ({ winnerId: m.winnerId, position: m.position }));
-    if (winners.length === 0) return;
-    
-    const nextRound = currentRound + 1;
-    const nextRoundMatches = await db.select().from(matches).where(
-      and(eq(matches.tournamentId, tournamentId), eq(matches.round, nextRound))
-    );
-    
-    if (nextRoundMatches.length > 0) return;
-    
-    for (let i = 0; i < winners.length; i += 2) {
-      if (winners[i + 1]) {
-        await this.createMatch({
-          tournamentId,
-          team1Id: winners[i].winnerId,
-          team2Id: winners[i + 1].winnerId,
-          round: nextRound,
-          position: Math.floor(i / 2),
-          status: 'pending',
-        });
+    try {
+      const currentMatches = await this.getMatches(tournamentId);
+      const roundMatches = currentMatches.filter(m => m.round === currentRound);
+      
+      // Check if all matches in this round are completed
+      const allCompleted = roundMatches.length > 0 && roundMatches.every(m => m.status === 'completed');
+      if (!allCompleted) return;
+      
+      // Get all winners from this round
+      const winners = roundMatches.filter(m => m.winnerId && m.winnerId !== null).map(m => m.winnerId as string);
+      if (winners.length === 0) return;
+      
+      const nextRound = currentRound + 1;
+      
+      // Check if next round already exists
+      const nextRoundMatches = await db.select().from(matches).where(
+        and(eq(matches.tournamentId, tournamentId), eq(matches.round, nextRound))
+      );
+      
+      if (nextRoundMatches.length > 0) return;
+      
+      // Create matches for next round by pairing consecutive winners
+      for (let i = 0; i < winners.length; i += 2) {
+        if (winners[i + 1]) {
+          await this.createMatch({
+            tournamentId,
+            team1Id: winners[i],
+            team2Id: winners[i + 1],
+            round: nextRound,
+            position: Math.floor(i / 2),
+            status: 'pending',
+          });
+        }
       }
+    } catch (error) {
+      console.error('Error creating next round:', error);
     }
   }
 
