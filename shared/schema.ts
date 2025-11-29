@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, jsonb, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, jsonb, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -62,6 +62,22 @@ export const matches = pgTable("matches", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+export const adminUsers = pgTable("admin_users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const playerAccessCodes = pgTable("player_access_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(),
+  issuedByAdminId: varchar("issued_by_admin_id"),
+  issuedAt: timestamp("issued_at").notNull().default(sql`now()`),
+  used: boolean("used").notNull().default(false),
+  usedAt: timestamp("used_at"),
+});
+
 export const insertChampionSchema = createInsertSchema(champions);
 export const insertDraftSessionSchema = createInsertSchema(draftSessions).omit({
   id: true,
@@ -79,6 +95,25 @@ export const insertMatchSchema = createInsertSchema(matches).omit({
   id: true,
   createdAt: true,
 });
+export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertPlayerAccessCodeSchema = createInsertSchema(playerAccessCodes).omit({
+  id: true,
+  issuedAt: true,
+  used: true,
+  usedAt: true,
+});
+
+export const adminLoginSchema = z.object({
+  username: z.string().min(1, "Kullanıcı adı gerekli"),
+  password: z.string().min(1, "Şifre gerekli"),
+});
+
+export const playerLoginSchema = z.object({
+  code: z.string().min(1, "Giriş kodu gerekli"),
+});
 
 export type Champion = typeof champions.$inferSelect;
 export type InsertChampion = z.infer<typeof insertChampionSchema>;
@@ -90,3 +125,9 @@ export type Team = typeof teams.$inferSelect;
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type Match = typeof matches.$inferSelect;
 export type InsertMatch = z.infer<typeof insertMatchSchema>;
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+export type PlayerAccessCode = typeof playerAccessCodes.$inferSelect;
+export type InsertPlayerAccessCode = z.infer<typeof insertPlayerAccessCodeSchema>;
+export type AdminLogin = z.infer<typeof adminLoginSchema>;
+export type PlayerLogin = z.infer<typeof playerLoginSchema>;
