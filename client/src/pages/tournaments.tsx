@@ -14,6 +14,8 @@ export default function Tournaments() {
   const { toast } = useToast();
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  const isAdmin = !!localStorage.getItem("adminSession");
 
   // Fetch tournaments
   const { data: tournaments = [], isLoading: tournamentsLoading } = useQuery<Tournament[]>({
@@ -81,14 +83,16 @@ export default function Tournaments() {
                 Turnuva Yönetimi
               </h1>
             </div>
-            <Button 
-              onClick={() => setShowCreateModal(true)}
-              className="lol-bg-gold hover:lol-bg-accent text-black font-medium"
-              data-testid="create-tournament-button"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Yeni Turnuva
-            </Button>
+{isAdmin && (
+              <Button 
+                onClick={() => setShowCreateModal(true)}
+                className="lol-bg-gold hover:lol-bg-accent text-black font-medium"
+                data-testid="create-tournament-button"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Yeni Turnuva
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -117,16 +121,20 @@ export default function Tournaments() {
                 <Trophy className="w-16 h-16 lol-text-gray mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Turnuva Seçin</h3>
                 <p className="lol-text-gray mb-4">
-                  Bracket görünümü için sol taraftan bir turnuva seçin
+                  {isAdmin 
+                    ? "Bracket görünümü için sol taraftan bir turnuva seçin" 
+                    : "Görüntülemek için sol taraftan bir turnuva seçin"}
                 </p>
-                <Button 
-                  onClick={() => setShowCreateModal(true)}
-                  variant="outline"
-                  className="border-lol-gold lol-text-gold hover:lol-bg-gold hover:text-black"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  İlk Turnuvanızı Oluşturun
-                </Button>
+                {isAdmin && (
+                  <Button 
+                    onClick={() => setShowCreateModal(true)}
+                    variant="outline"
+                    className="border-lol-gold lol-text-gold hover:lol-bg-gold hover:text-black"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    İlk Turnuvanızı Oluşturun
+                  </Button>
+                )}
               </div>
             )}
           </div>
