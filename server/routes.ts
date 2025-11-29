@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertDraftSessionSchema, insertTournamentSchema, insertTeamSchema, insertMatchSchema, adminLoginSchema, playerLoginSchema } from "@shared/schema";
+import { insertDraftSessionSchema, insertTournamentSchema, insertTeamSchema, insertMatchSchema, adminLoginSchema, playerLoginSchema, moderatorLoginSchema, moderatorRegisterSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -417,7 +417,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Player Login with Access Code
+  // Create Moderator Account (Admin only)
+  app.post("/api/auth/admin/moderators", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        res.status(401).json({ message: "Yetkilendirme gerekli" });
+        return;
+      }
+      
+      const token = authHeader.substring(7);
+      const admin = await storage.validateAdminSession(token);
+      
+      if (!admin) {
+        res.status(401).json({ message: "Geçersiz oturum" });
+        return;
+      }
+      
+      const validatedData = moderatorRegisterSchema.parse(req.body);
+      const moderator = await storage.createModerator(validatedData.username, validatedData.password, admin.id);
+      
+      res.status(201).json({ 
+        id: moderator.id, 
+        username: moderator.username,
+        createdAt: moderator.createdAt
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Geçersiz bilgiler", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Moderatör oluşturulamadı" });
+      }
+    }
+  });
+
+  // Get Moderators (Admin only)
+  app.get("/api/auth/admin/moderators", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        res.status(401).json({ message: "Yetkilendirme gerekli" });
+        return;
+      }
+      
+      const token = authHeader.substring(7);
+      const admin = await storage.validateAdminSession(token);
+      
+      if (!admin) {
+        res.status(401).json({ message: "Geçersiz oturum" });
+        return;
+      }
+      
+      const moderators = await storage.getModerators();
+      res.json(moderators.map(m => ({
+        id: m.id,
+        username: m.username,
+        createdAt: m.createdAt
+      })));
+    } catch (error) {
+      res.status(500).json({ message: "Moderatörler getirilemedi" });
+    }
+  });
+
+  // Moderator Login
+  app.post("/api/auth/moderator/login", async (req, res) => {
+    try {
+      const validatedData = moderatorLoginSchema.parse(req.body);
+      const moderator = await storage.verifyModeratorCredentials(validatedData.username, validatedData.password);
+      
+      if (!moderator) {
+        res.status(401).json({ message: "Geçersiz kullanıcı adı veya şifre" });
+        return;
+      }
+      
+      const token = await storage.createModeratorSession(moderator.id);
+      res.json({ 
+        token, 
+        moderator: { id: moderator.id, username: moderator.username },
+        message: "Moderatör girişi başarılı"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Geçersiz giriş bilgileri", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Giriş yapılamadı" });
+      }
+    }
+  });
+
+  // Moderator Logout
+  app.post("/api/auth/moderator/logout", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        res.status(401).json({ message: "Yetkilendirme gerekli" });
+        return;
+      }
+      
+      const token = authHeader.substring(7);
+      await storage.invalidateModeratorSession(token);
+      res.json({ message: "Çıkış yapıldı" });
+    } catch (error) {
+      res.status(500).json({ message: "Çıkış yapılamadı" });
+    }
+  });
+
+  // Player Login with Access Code (legacy - for backward compatibility)
   app.post("/api/auth/player/login", async (req, res) => {
     try {
       const validatedData = playerLoginSchema.parse(req.body);
