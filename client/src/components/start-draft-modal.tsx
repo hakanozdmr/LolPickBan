@@ -45,9 +45,12 @@ export function StartDraftModal({
 
   useEffect(() => {
     if (isOpen) {
+      setStep('loading');
+      setTeamCodes(null);
+      setDraftSessionId(null);
       fetchExistingCodes();
     }
-  }, [isOpen, tournamentId]);
+  }, [isOpen, tournamentId, matchId]);
 
   const fetchExistingCodes = async () => {
     setStep('loading');
