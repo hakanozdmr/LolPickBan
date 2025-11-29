@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertDraftSessionSchema, insertTournamentSchema, insertTeamSchema, insertMatchSchema } from "@shared/schema";
+import { insertDraftSessionSchema, insertTournamentSchema, insertTeamSchema, insertMatchSchema, adminLoginSchema, playerLoginSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -316,6 +316,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(400).json({ message: "Invalid data", errors: error.errors });
       } else {
         res.status(500).json({ message: "Failed to create draft from match" });
+      }
+    }
+  });
+
+  // Auth Routes - Admin Login
+  app.post("/api/auth/admin/login", async (req, res) => {
+    try {
+      const validatedData = adminLoginSchema.parse(req.body);
+      const admin = await storage.verifyAdminCredentials(validatedData.username, validatedData.password);
+      
+      if (!admin) {
+        res.status(401).json({ message: "Geçersiz kullanıcı adı veya şifre" });
+        return;
+      }
+      
+      const token = await storage.createAdminSession(admin.id);
+      res.json({ 
+        token, 
+        admin: { id: admin.id, username: admin.username } 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Geçersiz giriş bilgileri", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Giriş yapılamadı" });
+      }
+    }
+  });
+
+  // Admin Logout
+  app.post("/api/auth/admin/logout", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        res.status(401).json({ message: "Yetkilendirme gerekli" });
+        return;
+      }
+      
+      const token = authHeader.substring(7);
+      await storage.invalidateAdminSession(token);
+      res.json({ message: "Çıkış yapıldı" });
+    } catch (error) {
+      res.status(500).json({ message: "Çıkış yapılamadı" });
+    }
+  });
+
+  // Generate Access Codes (Admin only)
+  app.post("/api/auth/admin/access-codes", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        res.status(401).json({ message: "Yetkilendirme gerekli" });
+        return;
+      }
+      
+      const token = authHeader.substring(7);
+      const admin = await storage.validateAdminSession(token);
+      
+      if (!admin) {
+        res.status(401).json({ message: "Geçersiz oturum" });
+        return;
+      }
+      
+      const count = req.body.count || 1;
+      const codes = [];
+      
+      for (let i = 0; i < Math.min(count, 10); i++) {
+        const code = await storage.createAccessCode(admin.id);
+        codes.push(code);
+      }
+      
+      res.status(201).json(codes);
+    } catch (error) {
+      res.status(500).json({ message: "Kod oluşturulamadı" });
+    }
+  });
+
+  // Get Access Codes (Admin only)
+  app.get("/api/auth/admin/access-codes", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        res.status(401).json({ message: "Yetkilendirme gerekli" });
+        return;
+      }
+      
+      const token = authHeader.substring(7);
+      const admin = await storage.validateAdminSession(token);
+      
+      if (!admin) {
+        res.status(401).json({ message: "Geçersiz oturum" });
+        return;
+      }
+      
+      const codes = await storage.getAccessCodes();
+      res.json(codes);
+    } catch (error) {
+      res.status(500).json({ message: "Kodlar getirilemedi" });
+    }
+  });
+
+  // Player Login with Access Code
+  app.post("/api/auth/player/login", async (req, res) => {
+    try {
+      const validatedData = playerLoginSchema.parse(req.body);
+      const accessCode = await storage.validateAccessCode(validatedData.code);
+      
+      if (!accessCode) {
+        res.status(401).json({ message: "Geçersiz veya kullanılmış kod" });
+        return;
+      }
+      
+      await storage.markAccessCodeUsed(accessCode.id);
+      
+      res.json({ 
+        sessionId: accessCode.id,
+        message: "Giriş başarılı"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Geçersiz kod formatı", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Giriş yapılamadı" });
       }
     }
   });
