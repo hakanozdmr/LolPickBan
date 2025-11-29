@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import DraftSimulator from "@/pages/draft-simulator";
 import Tournaments from "@/pages/tournaments";
 import AdminPage from "@/pages/admin";
+import TeamLobby from "@/pages/team-lobby";
 import NotFound from "@/pages/not-found";
 import { PlayerLoginGate } from "@/components/player-login-gate";
 
@@ -16,6 +17,7 @@ function ProtectedRoutes() {
         <Route path="/" component={Tournaments}/>
         <Route path="/draft-simulator" component={DraftSimulator}/>
         <Route path="/tournaments" component={Tournaments}/>
+        <Route path="/team-lobby/:tournamentId" component={TeamLobby}/>
         <Route component={NotFound} />
       </Switch>
     </PlayerLoginGate>
@@ -27,6 +29,10 @@ function Router() {
   
   if (location === "/admin") {
     return <AdminPage />;
+  }
+  
+  if (location.startsWith("/team-lobby/")) {
+    return <TeamLobby />;
   }
   
   return <ProtectedRoutes />;
