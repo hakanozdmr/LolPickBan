@@ -120,6 +120,53 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async syncChampionsFromRiot(apiKey: string): Promise<Champion[]> {
+    try {
+      const response = await fetch(
+        `https://na1.api.riotgames.com/lol/platform/v3/champion-rotations?api_key=${apiKey}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Riot API error: ${response.status}`);
+      }
+
+      const championsPath = path.join(process.cwd(), "server", "data", "champions.json");
+      const datadragonVersion = "15.16.1";
+      
+      const response2 = await fetch(
+        `https://ddragon.leagueoflegends.com/cdn/${datadragonVersion}/data/en_US/champion.json`
+      );
+
+      if (!response2.ok) {
+        throw new Error(`DataDragon error: ${response2.status}`);
+      }
+
+      const data = await response2.json() as any;
+      const champions: Champion[] = [];
+
+      for (const [key, champion] of Object.entries(data.data)) {
+        const championData = champion as any;
+        champions.push({
+          id: championData.id.toLowerCase(),
+          name: championData.name,
+          title: championData.title,
+          roles: championData.roles || [],
+          classes: championData.tags || [],
+          image: `https://ddragon.leagueoflegends.com/cdn/${datadragonVersion}/img/champion/${championData.image.full}`,
+        });
+      }
+
+      fs.writeFileSync(championsPath, JSON.stringify(champions, null, 2));
+      this.championsCache = champions;
+      
+      console.log(`Successfully synced ${champions.length} champions from Riot API`);
+      return champions;
+    } catch (error) {
+      console.error("Failed to sync champions from Riot API:", error);
+      throw error;
+    }
+  }
+
   async getChampions(): Promise<Champion[]> {
     return this.championsCache;
   }

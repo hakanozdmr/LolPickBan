@@ -16,6 +16,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sync champions from Riot API
+  app.post("/api/champions/sync", async (req, res) => {
+    try {
+      const { apiKey } = req.body;
+      if (!apiKey) {
+        res.status(400).json({ message: "API key is required" });
+        return;
+      }
+      const champions = await storage.syncChampionsFromRiot(apiKey);
+      res.json({ message: "Champions synced successfully", count: champions.length });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to sync champions from Riot API" });
+    }
+  });
+
   // Create new draft session
   app.post("/api/draft-sessions", async (req, res) => {
     try {
