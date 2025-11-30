@@ -123,40 +123,36 @@ export class DatabaseStorage implements IStorage {
   async syncChampionsFromCommunityDragon(): Promise<Champion[]> {
     try {
       const championsPath = path.join(process.cwd(), "server", "data", "champions.json");
-      const currentChampions = this.championsCache;
+      const datadragonVersion = "15.16.1";
       
-      const baseUrl = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champions";
-      const cdnUrl = "https://cdn.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champions";
-      
-      const mergedChampions: Champion[] = [];
-      
-      for (const champion of currentChampions) {
-        try {
-          const response = await fetch(`${baseUrl}/${champion.id.toLowerCase()}.json`);
-          if (response.ok) {
-            const cdData = await response.json() as any;
-            
-            mergedChampions.push({
-              id: champion.id,
-              name: champion.name,
-              title: champion.title,
-              roles: champion.roles,
-              classes: champion.classes,
-              image: champion.image,
-            });
-          } else {
-            mergedChampions.push(champion);
-          }
-        } catch {
-          mergedChampions.push(champion);
-        }
+      const response = await fetch(
+        `https://ddragon.leagueoflegends.com/cdn/${datadragonVersion}/data/en_US/champion.json`
+      );
+
+      if (!response.ok) {
+        throw new Error(`DataDragon error: ${response.status}`);
       }
+
+      const data = await response.json() as any;
+      const champions: Champion[] = [];
+
+      for (const [key, champion] of Object.entries(data.data)) {
+        const championData = champion as any;
+        champions.push({
+          id: championData.id.toLowerCase(),
+          name: championData.name,
+          title: championData.title,
+          roles: championData.roles || [],
+          classes: championData.tags || [],
+          image: `https://ddragon.leagueoflegends.com/cdn/${datadragonVersion}/img/champion/${championData.image.full}`,
+        });
+      }
+
+      fs.writeFileSync(championsPath, JSON.stringify(champions, null, 2));
+      this.championsCache = champions;
       
-      fs.writeFileSync(championsPath, JSON.stringify(mergedChampions, null, 2));
-      this.championsCache = mergedChampions;
-      
-      console.log(`Successfully synced ${mergedChampions.length} champions from Community Dragon`);
-      return mergedChampions;
+      console.log(`Successfully synced ${champions.length} champions from Community Dragon (via DataDragon)`);
+      return champions;
     } catch (error) {
       console.error("Failed to sync champions from Community Dragon:", error);
       throw error;
