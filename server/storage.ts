@@ -120,6 +120,49 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async syncChampionsFromCommunityDragon(): Promise<Champion[]> {
+    try {
+      const championsPath = path.join(process.cwd(), "server", "data", "champions.json");
+      const currentChampions = this.championsCache;
+      
+      const baseUrl = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champions";
+      const cdnUrl = "https://cdn.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champions";
+      
+      const mergedChampions: Champion[] = [];
+      
+      for (const champion of currentChampions) {
+        try {
+          const response = await fetch(`${baseUrl}/${champion.id.toLowerCase()}.json`);
+          if (response.ok) {
+            const cdData = await response.json() as any;
+            
+            mergedChampions.push({
+              id: champion.id,
+              name: champion.name,
+              title: champion.title,
+              roles: champion.roles,
+              classes: champion.classes,
+              image: champion.image,
+            });
+          } else {
+            mergedChampions.push(champion);
+          }
+        } catch {
+          mergedChampions.push(champion);
+        }
+      }
+      
+      fs.writeFileSync(championsPath, JSON.stringify(mergedChampions, null, 2));
+      this.championsCache = mergedChampions;
+      
+      console.log(`Successfully synced ${mergedChampions.length} champions from Community Dragon`);
+      return mergedChampions;
+    } catch (error) {
+      console.error("Failed to sync champions from Community Dragon:", error);
+      throw error;
+    }
+  }
+
   async syncChampionsFromRiot(apiKey: string): Promise<Champion[]> {
     try {
       const response = await fetch(

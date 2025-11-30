@@ -16,6 +16,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sync champions from Community Dragon
+  app.post("/api/champions/sync-community", async (req, res) => {
+    try {
+      const champions = await storage.syncChampionsFromCommunityDragon();
+      res.json({ message: "Champions synced from Community Dragon successfully", count: champions.length });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to sync champions from Community Dragon" });
+    }
+  });
+
   // Sync champions from Riot API
   app.post("/api/champions/sync", async (req, res) => {
     try {
