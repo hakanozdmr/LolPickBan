@@ -483,7 +483,8 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     const updatedMatch = result[0];
-    if (updatedMatch && updatedMatch.status === 'completed') {
+    // If the match is completed, check if the next round should be created
+    if (updatedMatch && (updates.status === 'completed' || updates.winnerId)) {
       await this.createNextRoundIfNeeded(updatedMatch.tournamentId, updatedMatch.round);
     }
     
@@ -497,27 +498,41 @@ export class DatabaseStorage implements IStorage {
 
   async createNextRoundIfNeeded(tournamentId: string, currentRound: number): Promise<void> {
     try {
+      console.log(`Checking if next round is needed for tournament ${tournamentId}, current round ${currentRound}`);
       const currentMatches = await this.getMatches(tournamentId);
       const roundMatches = currentMatches.filter(m => m.round === currentRound);
       
-      // Check if all matches in this round are completed
-      const allCompleted = roundMatches.length > 0 && roundMatches.every(m => m.status === 'completed');
+      if (roundMatches.length === 0) return;
+
+      // Check if all matches in this round are completed and have a winner
+      const allCompleted = roundMatches.every(m => m.status === 'completed' && m.winnerId !== null);
+      console.log(`Round ${currentRound} completion status: ${allCompleted} (${roundMatches.filter(m => m.status === 'completed').length}/${roundMatches.length} matches completed)`);
+      
       if (!allCompleted) return;
       
-      // Get all winners from this round
-      const winners = roundMatches.filter(m => m.winnerId && m.winnerId !== null).map(m => m.winnerId as string);
-      if (winners.length === 0) return;
+      // Get all winners from this round, sorted by their position in the current round
+      const winners = roundMatches
+        .sort((a, b) => a.position - b.position)
+        .map(m => m.winnerId)
+        .filter((id): id is string => id !== null);
+      
+      if (winners.length < 2) {
+        console.log(`Not enough winners to create next round: ${winners.length}`);
+        return;
+      }
       
       const nextRound = currentRound + 1;
       
       // Check if next round already exists
-      const nextRoundMatches = await db.select().from(matches).where(
-        and(eq(matches.tournamentId, tournamentId), eq(matches.round, nextRound))
-      );
+      const nextRoundMatches = currentMatches.filter(m => m.round === nextRound);
+      if (nextRoundMatches.length > 0) {
+        console.log(`Next round ${nextRound} already exists, skipping creation`);
+        return;
+      }
       
-      if (nextRoundMatches.length > 0) return;
+      console.log(`Creating ${Math.floor(winners.length / 2)} matches for round ${nextRound}`);
       
-      // Create matches for next round by pairing consecutive winners
+      // Create matches for next round by pairing winners (1st winner vs 2nd, 3rd vs 4th, etc.)
       for (let i = 0; i < winners.length; i += 2) {
         if (winners[i + 1]) {
           await this.createMatch({
