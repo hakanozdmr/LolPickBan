@@ -18,7 +18,9 @@ The styling system uses **Tailwind CSS** with a custom design system featuring L
 ### Backend Architecture  
 The server is built with **Express.js** and TypeScript in an ESM module system. It follows a RESTful API design pattern with endpoints for champion data retrieval and draft session management. The server includes middleware for request logging, JSON parsing, and error handling. The architecture separates concerns with dedicated modules for routing, storage, and development tooling.
 
-The storage layer uses an abstraction pattern (`IStorage` interface) implemented with `DatabaseStorage` class that connects to PostgreSQL via **Neon Database** and **Drizzle ORM**. All authentication data, tournaments, and team codes persist in the database, while champion data is loaded from JSON files for performance.
+The storage layer uses an abstraction pattern (`IStorage` interface) implemented with `DatabaseStorage` class that connects to PostgreSQL via the standard **pg** (node-postgres) driver and **Drizzle ORM**. The database connection uses a connection pool (`pg.Pool`) for efficient connection management. All authentication data, tournaments, and team codes persist in the database, while champion data is loaded from JSON files for performance.
+
+**Important**: The project previously used `@neondatabase/serverless` (Neon HTTP driver) which caused write persistence failures with Replit's PostgreSQL. It was replaced with the standard `pg` driver to ensure reliable read/write operations.
 
 ### Database Schema
 The application defines database schemas using **Drizzle ORM** with PostgreSQL as the target database. The schema includes:

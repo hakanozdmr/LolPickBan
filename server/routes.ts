@@ -738,6 +738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       res.status(201).json(codes);
     } catch (error) {
+      console.error("Failed to create team codes:", error);
       res.status(500).json({ message: "Takım kodları oluşturulamadı" });
     }
   });

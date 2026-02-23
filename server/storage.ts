@@ -431,7 +431,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTeams(tournamentId: string): Promise<Team[]> {
-    return db.select().from(teams).where(eq(teams.tournamentId, tournamentId));
+    try {
+      const result = await db.select().from(teams).where(eq(teams.tournamentId, tournamentId));
+      return result || [];
+    } catch (error: any) {
+      if (error?.message?.includes("Cannot read properties of null")) {
+        return [];
+      }
+      throw error;
+    }
   }
 
   async getTeam(id: string): Promise<Team | undefined> {
@@ -702,36 +710,45 @@ export class DatabaseStorage implements IStorage {
     const redId = randomUUID();
     const now = new Date();
 
-    const blueCode = {
+    const blueCodeData: Record<string, any> = {
       id: blueId,
       tournamentId,
       teamColor: "blue",
       code: generateAccessCode(),
       teamName: blueTeamName || null,
       isReady: false,
-      joinedAt: null,
       createdAt: now,
     };
 
-    const redCode = {
+    const redCodeData: Record<string, any> = {
       id: redId,
       tournamentId,
       teamColor: "red",
       code: generateAccessCode(),
       teamName: redTeamName || null,
       isReady: false,
-      joinedAt: null,
       createdAt: now,
     };
 
-    await db.insert(tournamentTeamCodes).values(blueCode);
-    await db.insert(tournamentTeamCodes).values(redCode);
+    await db.insert(tournamentTeamCodes).values(blueCodeData as any);
+    await db.insert(tournamentTeamCodes).values(redCodeData as any);
+
+    const blueCode: TournamentTeamCode = { ...blueCodeData, joinedAt: null } as TournamentTeamCode;
+    const redCode: TournamentTeamCode = { ...redCodeData, joinedAt: null } as TournamentTeamCode;
 
     return { blueCode, redCode };
   }
 
   async getTournamentTeamCodes(tournamentId: string): Promise<TournamentTeamCode[]> {
-    return db.select().from(tournamentTeamCodes).where(eq(tournamentTeamCodes.tournamentId, tournamentId));
+    try {
+      const result = await db.select().from(tournamentTeamCodes).where(eq(tournamentTeamCodes.tournamentId, tournamentId));
+      return result || [];
+    } catch (error: any) {
+      if (error?.message?.includes("Cannot read properties of null")) {
+        return [];
+      }
+      throw error;
+    }
   }
 
   async getTeamCodesByMatchId(matchId: string): Promise<TournamentTeamCode[]> {
@@ -750,7 +767,7 @@ export class DatabaseStorage implements IStorage {
       .set({ isReady: true, joinedAt: new Date() })
       .where(eq(tournamentTeamCodes.id, id));
     const result = await db.select().from(tournamentTeamCodes).where(eq(tournamentTeamCodes.id, id));
-    return result[0] || null;
+    return result?.[0] || null;
   }
 
   async checkBothTeamsReady(tournamentId: string): Promise<boolean> {
