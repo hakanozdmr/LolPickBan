@@ -25,12 +25,7 @@ export function DraftHeader({
     return `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${championName}_0.jpg`;
   };
 
-  const progressPercentage = Math.max(0, Math.min(100, (timer / 30) * 100));
-
   const isBlueTeamTurn = draftSession.currentTeam === "blue";
-  const progressBarColor = isBlueTeamTurn
-    ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
-    : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]";
 
   const renderPickSlots = (picks: string[], team: "blue" | "red") => {
     const slots = Array.from({ length: 5 }, (_, i) => {
@@ -152,24 +147,31 @@ export function DraftHeader({
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(0,0,0,0.3)_0%,_transparent_70%)]"></div>
 
       <div className="relative z-10">
-        <div
-          className={`w-full h-1.5 bg-gray-800/80 rounded-full mb-4 flex overflow-hidden ${isBlueTeamTurn ? "justify-start" : "justify-end"}`}
-        >
-          <div
-            className={`h-full rounded-full transition-all duration-1000 ease-linear ${progressBarColor}`}
-            style={{ width: `${progressPercentage}%` }}
-            data-testid="timer-progress-bar"
-          ></div>
-        </div>
-
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-0">
-          <div className="text-center mb-3 sm:mb-4">
+          <div className="text-center mb-3 sm:mb-4 flex items-center justify-center gap-4">
             <h1
               className="text-xl sm:text-2xl font-bold lol-gradient-text"
               data-testid="tournament-title"
             >
               {draftSession.tournamentName || "TURNUVA ADI*"}
             </h1>
+            {draftSession.phase !== 'waiting' && draftSession.phase !== 'completed' && (
+              <div
+                className={`flex items-center justify-center min-w-[48px] h-10 rounded-xl px-3 border ${
+                  timer <= 5
+                    ? 'bg-red-500/10 border-red-500/40 text-red-400'
+                    : timer <= 10
+                      ? 'bg-amber-500/10 border-amber-500/40 text-amber-400'
+                      : isBlueTeamTurn
+                        ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                        : 'bg-red-500/10 border-red-500/30 text-red-400'
+                }`}
+                data-testid="timer-progress-bar"
+              >
+                <span className="text-lg font-bold tabular-nums">{timer}</span>
+                <span className="text-[10px] ml-1 opacity-60">sn</span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col lg:flex-row items-center justify-center gap-4 sm:gap-6 lg:gap-8">
