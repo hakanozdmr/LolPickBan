@@ -187,3 +187,69 @@
   opacity: 0.3;
   pointer-events: none;
 }
+
+@keyframes gold-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.gold-shimmer-border {
+  position: relative;
+}
+.gold-shimmer-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(45 60% 60%) 25%,
+    hsl(45 80% 75%) 50%,
+    hsl(45 60% 60%) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: gold-shimmer 3s linear infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@keyframes status-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+  50% { box-shadow: 0 0 8px 2px currentColor; }
+}
+
+.status-dot-pulse {
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+.tournament-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.tournament-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.lol-gradient-text {
+  background: linear-gradient(135deg, hsl(45 50% 75%), hsl(40 70% 55%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.lol-bg-gold {
+  background-color: hsl(45 50% 55%);
+}
+.lol-bg-gold:hover {
+  background-color: hsl(45 60% 50%);
+}
+
+.lol-bg-accent {
+  background-color: var(--lol-accent);
+}

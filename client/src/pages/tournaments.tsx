@@ -8,7 +8,7 @@ import { TournamentBracket } from "@/components/tournament-bracket";
 import { CreateTournamentModal } from "@/components/create-tournament-modal";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
-import { Plus, Trophy } from "lucide-react";
+import { Plus, Trophy, Swords, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Tournaments() {
@@ -107,7 +107,10 @@ export default function Tournaments() {
   if (tournamentsLoading) {
     return (
       <div className="min-h-screen lol-bg-dark flex items-center justify-center">
-        <div className="text-white text-xl">Turnuvalar yükleniyor...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-2 border-amber-500/30 border-t-amber-400 rounded-full animate-spin" />
+          <span className="text-gray-400 text-sm">Turnuvalar yükleniyor...</span>
+        </div>
       </div>
     );
   }
@@ -116,19 +119,26 @@ export default function Tournaments() {
     <div className="min-h-screen lol-bg-dark text-white font-inter flex flex-col">
       <NavigationHeader />
       
-      <div className="lol-bg-darker border-b border-gray-700 px-6 py-4">
-        <div className="max-w-7xl mx-auto">
+      <div className="relative overflow-hidden border-b border-gray-700/50">
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-900/10 via-transparent to-amber-900/10" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(180,130,50,0.08),transparent_70%)]" />
+        <div className="relative max-w-7xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Trophy className="lol-text-gold text-xl" />
-              <h1 className="text-2xl font-bold lol-text-gold" data-testid="tournaments-title">
-                Turnuva Yönetimi
-              </h1>
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/20 flex items-center justify-center">
+                <Swords className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold lol-gradient-text" data-testid="tournaments-title">
+                  Turnuva Yönetimi
+                </h1>
+                <p className="text-xs text-gray-500 mt-0.5">{tournaments.length} turnuva kayıtlı</p>
+              </div>
             </div>
-{canCreateTournament && (
+            {canCreateTournament && (
               <Button 
                 onClick={() => setShowCreateModal(true)}
-                className="lol-bg-gold hover:lol-bg-accent text-black font-medium"
+                className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-medium shadow-lg shadow-amber-900/20 border-0 h-9 px-4 text-sm"
                 data-testid="create-tournament-button"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -139,47 +149,51 @@ export default function Tournaments() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-12 gap-6">
-          {/* Tournament List Sidebar */}
-          <div className="col-span-4">
-            <TournamentList 
-              tournaments={tournaments}
-              selectedTournament={selectedTournament}
-              onSelectTournament={setSelectedTournament}
-              onDeleteTournament={canCreateTournament ? handleDeleteTournament : undefined}
-            />
-          </div>
-
-          {/* Tournament Bracket View */}
-          <div className="col-span-8">
-            {selectedTournament ? (
-              <TournamentBracket 
-                tournament={selectedTournament}
-                teams={teams}
-                matches={matches}
+      <div className="flex-1">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="grid grid-cols-12 gap-6">
+            <div className="col-span-12 lg:col-span-4">
+              <TournamentList 
+                tournaments={tournaments}
+                selectedTournament={selectedTournament}
+                onSelectTournament={setSelectedTournament}
+                onDeleteTournament={canCreateTournament ? handleDeleteTournament : undefined}
               />
-            ) : (
-              <div className="lol-bg-darker rounded-lg border border-gray-700 p-8 text-center">
-                <Trophy className="w-16 h-16 lol-text-gray mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Turnuva Seçin</h3>
-                <p className="lol-text-gray mb-4">
-                  {canCreateTournament 
-                    ? "Bracket görünümü için sol taraftan bir turnuva seçin" 
-                    : "Görüntülemek için sol taraftan bir turnuva seçin"}
-                </p>
-                {canCreateTournament && (
-                  <Button 
-                    onClick={() => setShowCreateModal(true)}
-                    variant="outline"
-                    className="border-lol-gold lol-text-gold hover:lol-bg-gold hover:text-black"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    İlk Turnuvanızı Oluşturun
-                  </Button>
-                )}
-              </div>
-            )}
+            </div>
+
+            <div className="col-span-12 lg:col-span-8">
+              {selectedTournament ? (
+                <TournamentBracket 
+                  tournament={selectedTournament}
+                  teams={teams}
+                  matches={matches}
+                />
+              ) : (
+                <div className="rounded-xl border border-gray-700/30 bg-gradient-to-b from-gray-800/30 to-gray-900/50 p-12 text-center">
+                  <div className="max-w-sm mx-auto">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 flex items-center justify-center mx-auto mb-6 shadow-lg">
+                      <Trophy className="w-10 h-10 text-gray-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-300 mb-2">Turnuva Seçin</h3>
+                    <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                      {canCreateTournament 
+                        ? "Bracket görünümü için sol taraftan bir turnuva seçin veya yeni bir turnuva oluşturun" 
+                        : "Görüntülemek için sol taraftan bir turnuva seçin"}
+                    </p>
+                    {canCreateTournament && (
+                      <Button 
+                        onClick={() => setShowCreateModal(true)}
+                        variant="outline"
+                        className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/50 hover:text-amber-300"
+                      >
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Yeni Turnuva Oluştur
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
