@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Gamepad2, Play, Users } from "lucide-react";
+import { Gamepad2, Play, Users, Music, Shield, Swords } from "lucide-react";
 
 interface DraftStartModalProps {
   isOpen: boolean;
@@ -12,36 +12,47 @@ interface DraftStartModalProps {
 export function DraftStartModal({ isOpen, onClose, onStartDraft, isLoading }: DraftStartModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="lol-bg-darker border-lol-gold max-w-lg" data-testid="draft-start-modal">
+      <DialogContent className="bg-gray-900 border-gray-700/50 shadow-2xl max-w-lg" data-testid="draft-start-modal">
         <DialogHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="lol-bg-dark rounded-full p-4 border-2 border-lol-gold">
-              <Gamepad2 className="w-12 h-12 lol-text-gold" />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/30 flex items-center justify-center">
+              <Gamepad2 className="w-8 h-8 text-amber-400" />
             </div>
           </div>
           
-          <DialogTitle className="text-2xl font-bold lol-text-gold" data-testid="modal-title">
+          <DialogTitle className="lol-gradient-text text-xl font-bold" data-testid="modal-title">
             Draft Başlat
           </DialogTitle>
           
           <DialogDescription className="text-white text-center space-y-3" data-testid="modal-description">
-            <div className="text-lg">
+            <div className="text-sm text-gray-300">
               Profesyonel League of Legends draft deneyimine hazır mısınız?
             </div>
             
-            <div className="lol-bg-dark rounded-lg p-4 space-y-2 text-sm">
-              <div className="flex items-center gap-2 lol-text-blue">
-                <Users className="w-4 h-4" />
+            <div className="rounded-xl bg-gray-800/40 border border-gray-700/30 p-4 space-y-3 text-sm">
+              <div className="flex items-center gap-3 text-blue-400">
+                <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                  <Users className="w-3.5 h-3.5" />
+                </div>
                 <span>Mavi Takım vs Kırmızı Takım</span>
               </div>
-              <div className="text-lol-gray">
-                • Phase 1: 6 Ban + 6 Pick
+              <div className="flex items-center gap-3 text-gray-400">
+                <div className="w-7 h-7 rounded-lg bg-gray-700/30 border border-gray-700/20 flex items-center justify-center">
+                  <Shield className="w-3.5 h-3.5 text-gray-500" />
+                </div>
+                <span>Phase 1: 6 Ban + 6 Pick</span>
               </div>
-              <div className="text-lol-gray">
-                • Phase 2: 4 Ban + 4 Pick
+              <div className="flex items-center gap-3 text-gray-400">
+                <div className="w-7 h-7 rounded-lg bg-gray-700/30 border border-gray-700/20 flex items-center justify-center">
+                  <Swords className="w-3.5 h-3.5 text-gray-500" />
+                </div>
+                <span>Phase 2: 4 Ban + 4 Pick</span>
               </div>
-              <div className="text-lol-gray">
-                • Epic draft müzik ve ses efektleri
+              <div className="flex items-center gap-3 text-gray-400">
+                <div className="w-7 h-7 rounded-lg bg-gray-700/30 border border-gray-700/20 flex items-center justify-center">
+                  <Music className="w-3.5 h-3.5 text-gray-500" />
+                </div>
+                <span>Epic draft müzik ve ses efektleri</span>
               </div>
             </div>
           </DialogDescription>
@@ -51,7 +62,7 @@ export function DraftStartModal({ isOpen, onClose, onStartDraft, isLoading }: Dr
           <Button
             onClick={onStartDraft}
             disabled={isLoading}
-            className="w-full lol-bg-gold hover:bg-yellow-600 text-black font-semibold"
+            className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-semibold shadow-lg shadow-amber-900/20"
             data-testid="confirm-start-draft-button"
           >
             <Play className="w-4 h-4 mr-2" />

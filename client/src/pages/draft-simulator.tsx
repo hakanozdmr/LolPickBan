@@ -394,8 +394,9 @@ export default function DraftSimulator() {
 
   if (championsLoading || draftLoading || !draftSession) {
     return (
-      <div className="min-h-screen lol-bg-dark flex items-center justify-center">
-        <div className="text-white text-xl">Yükleniyor...</div>
+      <div className="min-h-screen lol-bg-dark flex flex-col items-center justify-center gap-4">
+        <div className="w-12 h-12 border-2 border-amber-500/30 border-t-amber-400 rounded-full animate-spin" />
+        <div className="text-sm text-gray-400">Yükleniyor...</div>
       </div>
     );
   }

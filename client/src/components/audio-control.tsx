@@ -60,27 +60,27 @@ export function AudioControl({ onVolumeChange, initialVolume = 50 }: AudioContro
         <Button
           variant="ghost"
           size="sm"
-          className="lol-text-gold hover:lol-bg-dark hover:lol-text-accent"
+          className="text-gray-400 hover:text-amber-400 hover:bg-white/5 transition-colors"
           data-testid="audio-control-button"
         >
           {getVolumeIcon()}
-          <span className="ml-1 text-xs">{Math.round(displayVolume)}%</span>
+          <span className="ml-1 text-xs font-medium">{Math.round(displayVolume)}%</span>
         </Button>
       </PopoverTrigger>
       
       <PopoverContent 
-        className="w-64 lol-bg-darker border-lol-gold" 
+        className="w-64 bg-gray-900 border-gray-700/50 shadow-2xl" 
         align="end"
         data-testid="audio-control-panel"
       >
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-white">Ses Seviyesi</span>
+            <span className="text-xs uppercase tracking-wider text-gray-400">Ses Seviyesi</span>
             <Button
               variant="ghost"
               size="sm"
               onClick={toggleMute}
-              className="lol-text-gold hover:lol-bg-dark"
+              className="text-gray-400 hover:text-amber-400 hover:bg-white/5"
               data-testid="mute-toggle-button"
             >
               {getVolumeIcon()}
@@ -99,14 +99,14 @@ export function AudioControl({ onVolumeChange, initialVolume = 50 }: AudioContro
               data-testid="volume-slider"
             />
             
-            <div className="flex justify-between text-xs lol-text-gray">
+            <div className="flex justify-between text-[10px] text-gray-600">
               <span>0%</span>
-              <span className="lol-text-gold font-medium">{Math.round(displayVolume)}%</span>
+              <span className="text-amber-400 font-medium">{Math.round(displayVolume)}%</span>
               <span>100%</span>
             </div>
           </div>
           
-          <div className="text-xs lol-text-gray text-center">
+          <div className="text-[10px] text-gray-600 text-center">
             Draft müziği ve ses efektleri
           </div>
         </div>

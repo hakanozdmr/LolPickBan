@@ -43,37 +43,41 @@ export function ActionBar({
   const isCompleted = draftSession.phase === 'completed';
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 lol-bg-darker border-t border-gray-700 p-4">
+    <div className="fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-md border-t border-gray-700/30 shadow-[0_-4px_20px_rgba(0,0,0,0.3)] p-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="text-sm lol-text-gray">
-            Mevcut Durum: <span className="lol-text-accent font-semibold" data-testid="current-action">{currentAction}</span>
+          <div className="text-xs text-gray-500">
+            Mevcut Durum: <span className="text-amber-400 font-medium" data-testid="current-action">{currentAction}</span>
           </div>
           {!isWaiting && !isCompleted && (
-            <div className="text-sm lol-text-gray">
-              Sıra: <span className={`font-semibold ${draftSession.currentTeam === 'blue' ? 'text-blue-400' : 'text-red-400'}`} data-testid="current-team">
-                {draftSession.currentTeam === 'blue' ? 'Mavi Takım' : 'Kırmızı Takım'}
+            <div className="text-xs text-gray-500 flex items-center gap-1.5">
+              Sıra:
+              <span className="flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full ${draftSession.currentTeam === 'blue' ? 'bg-blue-400' : 'bg-red-400'}`} />
+                <span className={`font-semibold ${draftSession.currentTeam === 'blue' ? 'text-blue-400' : 'text-red-400'}`} data-testid="current-team">
+                  {draftSession.currentTeam === 'blue' ? 'Mavi Takım' : 'Kırmızı Takım'}
+                </span>
               </span>
             </div>
           )}
           {userTeam && !isWaiting && !isCompleted && (
-            <div className={`text-sm font-medium ${isUserTurn ? 'text-green-400' : 'text-yellow-400'}`}>
+            <>
               {isUserTurn ? (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1">
                   <Play className="w-3 h-3" />
                   Sıra sizde!
                 </span>
               ) : (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-3 py-1">
                   <Clock className="w-3 h-3" />
                   Rakibin sırasını bekleyin
                 </span>
               )}
-            </div>
+            </>
           )}
           {selectedChampion && (
-            <div className="text-sm lol-text-gray">
-              Seçili: <span className="lol-text-gold font-semibold" data-testid="selected-champion">
+            <div className="text-xs text-gray-500 flex items-center gap-1.5">
+              Seçili: <span className="text-amber-400 font-semibold border-b border-amber-500/30" data-testid="selected-champion">
                 {selectedChampion.name}
               </span>
             </div>
@@ -84,7 +88,7 @@ export function ActionBar({
           {isWaiting && isModerator && onStartDraft && (
             <Button
               onClick={onStartDraft}
-              className="lol-bg-gold hover:lol-bg-accent text-black font-semibold"
+              className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-semibold shadow-lg shadow-amber-900/20"
               data-testid="start-draft-button"
             >
               <Play className="mr-2 h-4 w-4" />
@@ -93,7 +97,7 @@ export function ActionBar({
           )}
           
           {isWaiting && !isModerator && userTeam && (
-            <div className="text-amber-400 text-sm font-medium flex items-center gap-2">
+            <div className="flex items-center gap-2 text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-4 py-2">
               <Clock className="w-4 h-4 animate-pulse" />
               Moderatörün draft'ı başlatması bekleniyor...
             </div>
@@ -103,7 +107,7 @@ export function ActionBar({
             <Button
               onClick={onBanChampion}
               disabled={!selectedChampion || !canUserAct}
-              className="bg-red-600 hover:bg-red-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white shadow-lg shadow-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="ban-champion-button"
             >
               <Ban className="mr-2 h-4 w-4" />
@@ -115,7 +119,7 @@ export function ActionBar({
             <Button
               onClick={onPickChampion}
               disabled={!selectedChampion || !canUserAct}
-              className="bg-lol-blue hover:bg-lol-blue/80 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="pick-champion-button"
             >
               <Check className="mr-2 h-4 w-4" />

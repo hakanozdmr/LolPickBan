@@ -31,27 +31,27 @@ export function ChampionGrid({
   const getStatusClasses = (status: string) => {
     switch (status) {
       case 'banned':
-        return 'champion-card-banned cursor-not-allowed';
+        return 'grayscale cursor-not-allowed opacity-60';
       case 'picked':
-        return 'champion-card-picked cursor-not-allowed';
+        return 'grayscale cursor-not-allowed opacity-40';
       case 'fearless':
-        return 'champion-card-banned cursor-not-allowed opacity-40';
+        return 'grayscale cursor-not-allowed opacity-40';
       case 'selected':
-        return 'champion-card-selected border-lol-gold scale-105';
+        return 'border-amber-500/60 bg-amber-500/5 shadow-lg shadow-amber-500/10 scale-105';
       default:
-        return 'border-transparent hover:border-lol-gold hover:scale-105 cursor-pointer';
+        return 'border-transparent hover:border-amber-500/40 hover:shadow-lg hover:shadow-amber-900/10 hover:scale-105 cursor-pointer';
     }
   };
 
   return (
     <div className="flex-1">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-white" data-testid="champion-grid-title">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="lol-gradient-text text-base font-semibold" data-testid="champion-grid-title">
           Şampiyon Seçimi
         </h2>
-        <div className="text-sm lol-text-gray" data-testid="champions-count">
+        <span className="bg-gray-800 text-gray-500 text-xs px-2 py-0.5 rounded-full" data-testid="champions-count">
           {champions.length} şampiyon
-        </div>
+        </span>
       </div>
 
       <div className="grid grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3" data-testid="champion-grid">
@@ -66,7 +66,7 @@ export function ChampionGrid({
                   onClick={() => canSelect && onChampionSelect(champion)}
                   onMouseEnter={() => canSelect && onChampionHover?.()}
                   className={`
-                    group relative lol-bg-darker rounded-lg overflow-hidden border-2 
+                    group relative bg-gray-800/50 border border-gray-700/30 rounded-lg overflow-hidden 
                     transition-all duration-200 ${getStatusClasses(status)}
                   `}
                   data-testid={`champion-card-${champion.id}`}
@@ -79,44 +79,43 @@ export function ChampionGrid({
                         canSelect ? 'group-hover:scale-110' : ''
                       }`}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                     
                     {status === 'banned' && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-red-500 text-3xl">🚫</span>
+                      <div className="absolute inset-0 flex items-center justify-center bg-red-900/20">
+                        <div className="text-red-500 font-bold text-lg">✕</div>
                       </div>
                     )}
                     {status === 'fearless' && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/60">
                         <div className="text-center">
-                          <span className="text-orange-400 text-2xl font-bold">F</span>
-                          <div className="text-[8px] text-orange-300 mt-0.5">FEARLESS</div>
+                          <span className="text-orange-400 text-xl font-bold drop-shadow-[0_0_6px_rgba(251,146,60,0.4)]">F</span>
+                          <div className="text-[7px] uppercase tracking-widest text-orange-300/80 mt-0.5">Fearless</div>
                         </div>
                       </div>
                     )}
                   </div>
                   
-                  {/* Champion name at bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/90 p-2">
-                    <div className="text-sm font-bold text-white text-center truncate" data-testid={`champion-name-${champion.id}`}>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 via-gray-900/90 to-transparent px-1.5 py-1.5">
+                    <div className="text-[11px] font-medium text-white text-center truncate" data-testid={`champion-name-${champion.id}`}>
                       {champion.name}
                     </div>
                   </div>
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs">
+              <TooltipContent side="top" className="max-w-xs bg-gray-900 border border-gray-700/50 shadow-2xl">
                 <div className="space-y-2">
-                  <div className="font-bold text-lol-gold">{champion.name}</div>
-                  <div className="text-sm text-gray-300 italic">{champion.title}</div>
+                  <div className="font-bold text-amber-400">{champion.name}</div>
+                  <div className="text-xs text-gray-400 italic">{champion.title}</div>
                   
-                  <div className="space-y-1">
-                    <div className="text-sm">
-                      <span className="font-semibold text-lol-blue">Roller:</span>
+                  <div className="space-y-1.5">
+                    <div className="text-xs">
+                      <span className="font-semibold text-blue-400">Roller:</span>
                       <div className="flex gap-1 mt-1 flex-wrap">
                         {champion.roles.map((role) => (
                           <span 
                             key={role}
-                            className="text-xs px-2 py-1 bg-lol-blue/80 rounded text-white"
+                            className="text-[10px] px-1.5 py-0.5 bg-blue-500/15 border border-blue-500/30 rounded text-blue-300"
                           >
                             {role}
                           </span>
@@ -124,13 +123,13 @@ export function ChampionGrid({
                       </div>
                     </div>
                     
-                    <div className="text-sm">
-                      <span className="font-semibold text-lol-red">Özellikler:</span>
+                    <div className="text-xs">
+                      <span className="font-semibold text-amber-400">Özellikler:</span>
                       <div className="flex gap-1 mt-1 flex-wrap">
                         {champion.classes.map((champClass) => (
                           <span 
                             key={champClass}
-                            className="text-xs px-2 py-1 bg-lol-red/80 rounded text-white"
+                            className="text-[10px] px-1.5 py-0.5 bg-amber-500/15 border border-amber-500/30 rounded text-amber-300"
                           >
                             {champClass === 'Fighter' ? 'Savaşçı' :
                              champClass === 'Mage' ? 'Büyücü' :

@@ -95,7 +95,6 @@ export function CompactFilters({
 }: CompactFiltersProps) {
   return (
     <div className="space-y-4 mb-6 flex flex-col items-center">
-      {/* Search */}
       <div className="flex items-center gap-4 justify-center">
         <div className="relative max-w-md">
           <Input
@@ -103,10 +102,10 @@ export function CompactFilters({
             placeholder="Şampiyon ara..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="lol-bg-dark border-gray-600 pl-10 text-white placeholder-gray-400 focus:border-lol-accent w-80"
+            className="bg-gray-800/50 border-gray-700/50 rounded-lg pl-10 text-white placeholder-gray-500 focus:border-amber-500/50 focus:ring-amber-500/20 w-80"
             data-testid="search-input"
           />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
         </div>
         
         {(selectedRoles.length > 0 || selectedClasses.length > 0) && (
@@ -114,7 +113,7 @@ export function CompactFilters({
             onClick={onClearFilters}
             variant="secondary"
             size="sm"
-            className="bg-gray-700 hover:bg-gray-600 text-white"
+            className="bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700 border border-gray-700/50 text-xs"
             data-testid="clear-filters-button"
           >
             Filtreleri Temizle
@@ -122,10 +121,8 @@ export function CompactFilters({
         )}
       </div>
 
-      {/* Role and Class Filters */}
-      <div className="flex flex-wrap items-center justify-center gap-8 py-4">
-        {/* Role Icons */}
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-center gap-4 py-4">
+        <div className="flex items-center gap-3">
           {ROLES.map((role) => {
             const isActive = selectedRoles.includes(role.id);
             
@@ -135,10 +132,10 @@ export function CompactFilters({
                 variant="ghost"
                 size="sm"
                 onClick={() => onRoleToggle(role.id)}
-                className={`p-3 lol-bg-dark hover:bg-lol-blue/20 border transition-all duration-200 ${
+                className={`p-3 rounded-lg transition-all duration-200 ${
                   isActive 
-                    ? 'bg-lol-blue/20 border-lol-blue' 
-                    : 'border-transparent hover:border-lol-blue'
+                    ? 'bg-blue-500/10 border border-blue-500/40 shadow-sm shadow-blue-500/10' 
+                    : 'bg-gray-800/40 border border-gray-700/30 hover:border-blue-500/30 hover:bg-blue-500/5'
                 }`}
                 data-testid={`role-filter-${role.id.toLowerCase()}`}
                 title={role.name}
@@ -153,8 +150,9 @@ export function CompactFilters({
           })}
         </div>
 
-        {/* Class Icons */}
-        <div className="flex items-center gap-4">
+        <div className="w-px h-8 bg-gray-700/40" />
+
+        <div className="flex items-center gap-3">
           {CLASSES.map((champClass) => {
             const isActive = selectedClasses.includes(champClass.id);
             
@@ -164,10 +162,10 @@ export function CompactFilters({
                 variant="ghost"
                 size="sm"
                 onClick={() => onClassToggle(champClass.id)}
-                className={`p-3 lol-bg-dark hover:bg-lol-red/20 border transition-all duration-200 ${
+                className={`p-3 rounded-lg transition-all duration-200 ${
                   isActive 
-                    ? 'bg-lol-red/20 border-lol-red' 
-                    : 'border-transparent hover:border-lol-red'
+                    ? 'bg-amber-500/10 border border-amber-500/40 shadow-sm shadow-amber-500/10' 
+                    : 'bg-gray-800/40 border border-gray-700/30 hover:border-amber-500/30 hover:bg-amber-500/5'
                 }`}
                 data-testid={`class-filter-${champClass.id.toLowerCase()}`}
                 title={champClass.name}
