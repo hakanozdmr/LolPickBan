@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Tournament, Team, Match } from "@shared/schema";
-import { NavigationHeader } from "@/components/navigation-header";
 import { TournamentList } from "@/components/tournament-list";
 import { TournamentBracket } from "@/components/tournament-bracket";
 import { CreateTournamentModal } from "@/components/create-tournament-modal";
@@ -117,8 +116,6 @@ export default function Tournaments() {
 
   return (
     <div className="min-h-screen lol-bg-dark text-white font-inter flex flex-col">
-      <NavigationHeader />
-      
       <div className="relative overflow-hidden border-b border-gray-700/50">
         <div className="absolute inset-0 bg-gradient-to-r from-amber-900/10 via-transparent to-amber-900/10" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(180,130,50,0.08),transparent_70%)]" />

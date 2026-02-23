@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { NavigationHeader } from "@/components/navigation-header";
 import { Footer } from "@/components/footer";
 import { Shield, Copy, LogOut, Plus, UserPlus, ArrowLeft, User } from "lucide-react";
 import { Link } from "wouter";
@@ -126,8 +125,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen lol-bg-dark flex flex-col">
-      <NavigationHeader />
-      
       <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8">
         <div className="mb-6">
           <Link href="/">
