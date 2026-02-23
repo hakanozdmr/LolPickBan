@@ -3,7 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Play, Users, Plus, Gamepad2, Shield, Sword, Eye, Check, Clock } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Play, Users, Plus, Gamepad2, Shield, Sword, Eye, Check, Clock, Flame } from "lucide-react";
 import { useState } from "react";
 import { AddTeamModal } from "@/components/add-team-modal";
 import { StartDraftModal } from "@/components/start-draft-modal";
@@ -38,6 +41,8 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
   const [showAddTeamModal, setShowAddTeamModal] = useState(false);
   const [draftModalMatchId, setDraftModalMatchId] = useState<string | null>(null);
   const [startDraftMatch, setStartDraftMatch] = useState<Match | null>(null);
+  const [seriesFormat, setSeriesFormat] = useState<string>("bo1");
+  const [fearlessMode, setFearlessMode] = useState(false);
 
   const { data: readyStatus } = useQuery<ReadyStatus>({
     queryKey: ['/api/tournaments', tournament.id, 'ready-status'],
@@ -71,14 +76,9 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
 
   const generateBracketMutation = useMutation({
     mutationFn: async () => {
-      // Generate matches for single elimination bracket
-      const rounds = Math.ceil(Math.log2(teams.length));
       const matchPromises = [];
-
-      // Shuffle teams randomly for fair matchups
       const shuffledTeams = [...teams].sort(() => Math.random() - 0.5);
 
-      // First round matches
       for (let i = 0; i < shuffledTeams.length; i += 2) {
         if (shuffledTeams[i + 1]) {
           matchPromises.push(
@@ -91,6 +91,8 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                 round: 1,
                 position: Math.floor(i / 2),
                 status: 'pending',
+                seriesFormat,
+                fearlessMode,
               }),
             })
           );
@@ -152,6 +154,51 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
     if (!id) return null;
     return teams.find(team => team.id === id);
   };
+
+  const gameWinnerMutation = useMutation({
+    mutationFn: async ({ matchId, winnerId }: { matchId: string; winnerId: string }) => {
+      const response = await fetch(`/api/matches/${matchId}/game-winner`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ winnerId }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Oyun kazananı belirlenemedi');
+      }
+      return response.json();
+    },
+    onSuccess: (updatedMatch) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', tournament.id, 'matches'] });
+      const winner = getTeamById(updatedMatch.winnerId);
+      if (updatedMatch.status === 'completed') {
+        toast({
+          title: "Seri Tamamlandı!",
+          description: `${winner?.name} seriyi kazandı!`,
+        });
+      } else {
+        toast({
+          title: "Oyun Kazananı Belirlendi",
+          description: `Skor: ${updatedMatch.team1Wins} - ${updatedMatch.team2Wins}`,
+        });
+      }
+    },
+  });
+
+  const startNextGameDraftMutation = useMutation({
+    mutationFn: async ({ matchId, gameNumber }: { matchId: string; gameNumber: number }) => {
+      const response = await fetch(`/api/matches/${matchId}/draft`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameNumber }),
+      });
+      if (!response.ok) throw new Error('Failed to start next game draft');
+      return response.json();
+    },
+    onSuccess: (draftSession) => {
+      setLocation(`/draft-simulator?session=${draftSession.id}`);
+    },
+  });
 
   // Component to display draft results
   const DraftResults = ({ matchId }: { matchId: string }) => {
@@ -421,6 +468,186 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
     );
   };
 
+  const MatchDraftControls = ({ match, team1, team2 }: { match: Match; team1: Team | null; team2: Team | null }) => {
+    const isSeries = match.seriesFormat === 'bo3' || match.seriesFormat === 'bo5';
+
+    const { data: allDrafts = [] } = useQuery<DraftSession[]>({
+      queryKey: ['/api/matches', match.id, 'drafts'],
+      enabled: match.status === 'in_progress',
+    });
+
+    const currentDraft = allDrafts.find(d => d.gameNumber === match.currentGame);
+    const previousDraft = allDrafts.find(d => d.gameNumber === match.currentGame - 1);
+
+    if (match.status !== 'in_progress' || !team1 || !team2) return null;
+
+    if (isSeries) {
+      const needsGameDraft = !currentDraft;
+      const currentDraftCompleted = currentDraft?.phase === 'completed';
+      const currentDraftOngoing = currentDraft && currentDraft.phase !== 'waiting' && currentDraft.phase !== 'completed';
+      const currentDraftWaiting = currentDraft?.phase === 'waiting';
+
+      return (
+        <div className="space-y-1">
+          {needsGameDraft && (
+            <Button
+              size="sm"
+              onClick={() => startNextGameDraftMutation.mutate({ matchId: match.id, gameNumber: match.currentGame })}
+              disabled={startNextGameDraftMutation.isPending}
+              className="lol-bg-gold hover:lol-bg-accent text-black text-xs"
+            >
+              <Play className="w-3 h-3 mr-1" />
+              Oyun {match.currentGame} Draft
+            </Button>
+          )}
+
+          {currentDraftWaiting && (
+            <Button
+              size="sm"
+              onClick={() => setLocation(`/draft-simulator?session=${currentDraft.id}`)}
+              className="lol-bg-gold hover:lol-bg-accent text-black text-xs"
+            >
+              <Play className="w-3 h-3 mr-1" />
+              Draft'a Git
+            </Button>
+          )}
+
+          {currentDraftOngoing && (
+            <Button
+              size="sm"
+              onClick={() => setLocation(`/draft-simulator?session=${currentDraft!.id}`)}
+              className="bg-green-600 hover:bg-green-700 text-white text-xs"
+            >
+              <Eye className="w-3 h-3 mr-1" />
+              Draft İzle
+            </Button>
+          )}
+
+          {currentDraftCompleted && !match.winnerId && (
+            <div className="space-y-1">
+              <div className="text-xs lol-text-gray mb-1">Oyun {match.currentGame} Kazananı:</div>
+              <Button
+                size="sm"
+                onClick={() => gameWinnerMutation.mutate({ matchId: match.id, winnerId: team1.id })}
+                disabled={gameWinnerMutation.isPending}
+                className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {team1.name}
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => gameWinnerMutation.mutate({ matchId: match.id, winnerId: team2.id })}
+                disabled={gameWinnerMutation.isPending}
+                className="w-full text-xs bg-red-600 hover:bg-red-700 text-white"
+              >
+                {team2.name}
+              </Button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // BO1 logic (existing behavior)
+    return (
+      <div className="space-y-1">
+        {draftSession && draftSession.phase === 'waiting' && (
+          <Button
+            size="sm"
+            onClick={() => setLocation(`/draft-simulator?session=${draftSession.id}`)}
+            className="lol-bg-gold hover:lol-bg-accent text-black text-xs"
+          >
+            <Play className="w-3 h-3 mr-1" />
+            Draft'a Git
+          </Button>
+        )}
+
+        {draftSession && draftSession.phase !== 'waiting' && draftSession.phase !== 'completed' && (
+          <Button
+            size="sm"
+            onClick={() => setLocation(`/draft-simulator?session=${draftSession.id}`)}
+            className="bg-green-600 hover:bg-green-700 text-white text-xs"
+          >
+            <Eye className="w-3 h-3 mr-1" />
+            Draft İzle
+          </Button>
+        )}
+
+        {!match.winnerId && draftSession?.phase === 'completed' && (
+          <div className="space-y-1">
+            <div className="text-xs lol-text-gray mb-1">Kazanan:</div>
+            <Button
+              size="sm"
+              onClick={() => setWinnerMutation.mutate({ matchId: match.id, winnerId: team1.id })}
+              disabled={setWinnerMutation.isPending}
+              className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {team1.name}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setWinnerMutation.mutate({ matchId: match.id, winnerId: team2.id })}
+              disabled={setWinnerMutation.isPending}
+              className="w-full text-xs bg-red-600 hover:bg-red-700 text-white"
+            >
+              {team2.name}
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const MatchDraftResults = ({ matchId, match }: { matchId: string; match: Match }) => {
+    const isSeries = match.seriesFormat === 'bo3' || match.seriesFormat === 'bo5';
+
+    if (isSeries) {
+      const { data: allDrafts = [] } = useQuery<DraftSession[]>({
+        queryKey: ['/api/matches', matchId, 'drafts'],
+      });
+
+      if (allDrafts.length === 0) return null;
+
+      return (
+        <div className="mt-3 pt-3 border-t border-gray-600">
+          <div className="text-xs lol-text-gray mb-2">Oyun Draftları:</div>
+          <div className="space-y-2">
+            {allDrafts
+              .sort((a, b) => a.gameNumber - b.gameNumber)
+              .map((draft) => (
+                <div key={draft.id} className="flex items-center justify-between p-2 lol-bg-darker rounded">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-white">Oyun {draft.gameNumber}</span>
+                    <Badge className={`text-xs ${
+                      draft.phase === 'completed' ? 'bg-blue-500/20 text-blue-300' : 'bg-green-500/20 text-green-300'
+                    } border`}>
+                      {draft.phase === 'completed' ? 'Tamamlandı' : 'Devam Ediyor'}
+                    </Badge>
+                    {draft.fearlessBannedChampions.length > 0 && (
+                      <span className="text-xs text-orange-400">
+                        ({draft.fearlessBannedChampions.length} Fearless ban)
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setDraftModalMatchId(matchId)}
+                    className="text-xs lol-text-blue hover:lol-bg-blue/20"
+                  >
+                    <Eye className="w-3 h-3 mr-1" />
+                    Detaylar
+                  </Button>
+                </div>
+              ))}
+          </div>
+        </div>
+      );
+    }
+
+    return <DraftResults matchId={matchId} />;
+  };
+
   const canGenerateBracket = teams.length === tournament.maxTeams && matches.length === 0;
   const canAddMoreTeams = teams.length < tournament.maxTeams;
 
@@ -486,6 +713,46 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
               )}
             </div>
           </div>
+
+          {canGenerateBracket && (
+            <div className="mt-4 p-4 lol-bg-dark rounded-lg border border-gray-600">
+              <h4 className="text-sm font-semibold lol-text-gold mb-3">Maç Ayarları</h4>
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm text-gray-300">Seri Formatı:</Label>
+                  <Select value={seriesFormat} onValueChange={setSeriesFormat}>
+                    <SelectTrigger className="w-28 lol-bg-darker border-gray-600 text-white h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="lol-bg-darker border-gray-600">
+                      <SelectItem value="bo1">BO1</SelectItem>
+                      <SelectItem value="bo3">BO3</SelectItem>
+                      <SelectItem value="bo5">BO5</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {(seriesFormat === 'bo3' || seriesFormat === 'bo5') && (
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      checked={fearlessMode} 
+                      onCheckedChange={setFearlessMode}
+                      className="data-[state=checked]:bg-orange-500"
+                    />
+                    <Label className="text-sm text-gray-300 flex items-center gap-1">
+                      <Flame className="w-4 h-4 text-orange-400" />
+                      Fearless Draft
+                    </Label>
+                    {fearlessMode && (
+                      <span className="text-xs text-orange-400 ml-1">
+                        (Seçilen şampiyonlar sonraki maçta seçilemez)
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -552,6 +819,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                         const team1 = getTeamById(match.team1Id);
                         const team2 = getTeamById(match.team2Id);
                         const winner = getTeamById(match.winnerId);
+                        const isSeries = match.seriesFormat === 'bo3' || match.seriesFormat === 'bo5';
                         
                         return (
                           <div 
@@ -565,6 +833,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                   winner?.id === team1?.id ? 'lol-text-gold font-semibold' : 'text-white'
                                 }`}>
                                   <span>{team1?.name || 'TBD'}</span>
+                                  {isSeries && <span className="text-sm lol-text-gray">({match.team1Wins})</span>}
                                   {winner?.id === team1?.id && <span>👑</span>}
                                 </div>
                                 <div className="text-sm lol-text-gray">vs</div>
@@ -572,19 +841,39 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                   winner?.id === team2?.id ? 'lol-text-gold font-semibold' : 'text-white'
                                 }`}>
                                   <span>{team2?.name || 'TBD'}</span>
+                                  {isSeries && <span className="text-sm lol-text-gray">({match.team2Wins})</span>}
                                   {winner?.id === team2?.id && <span>👑</span>}
                                 </div>
                               </div>
                               
-                              <div className="flex flex-col gap-2">
-                                <Badge className={`text-xs ${
-                                  match.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
-                                  match.status === 'in_progress' ? 'bg-green-500/20 text-green-300' :
-                                  'bg-blue-500/20 text-blue-300'
-                                } border`}>
-                                  {match.status === 'pending' ? 'Bekliyor' :
-                                   match.status === 'in_progress' ? 'Devam Ediyor' : 'Tamamlandı'}
-                                </Badge>
+                              <div className="flex flex-col gap-2 items-end">
+                                <div className="flex items-center gap-1">
+                                  <Badge className={`text-xs ${
+                                    match.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
+                                    match.status === 'in_progress' ? 'bg-green-500/20 text-green-300' :
+                                    'bg-blue-500/20 text-blue-300'
+                                  } border`}>
+                                    {match.status === 'pending' ? 'Bekliyor' :
+                                     match.status === 'in_progress' ? 'Devam Ediyor' : 'Tamamlandı'}
+                                  </Badge>
+                                  {isSeries && (
+                                    <Badge className="text-xs bg-purple-500/20 text-purple-300 border">
+                                      {match.seriesFormat.toUpperCase()}
+                                    </Badge>
+                                  )}
+                                  {match.fearlessMode && (
+                                    <Badge className="text-xs bg-orange-500/20 text-orange-300 border flex items-center gap-1">
+                                      <Flame className="w-3 h-3" />
+                                      Fearless
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                {isSeries && match.status === 'in_progress' && (
+                                  <div className="text-xs lol-text-gray">
+                                    Oyun {match.currentGame} / {match.seriesFormat === 'bo5' ? '5' : '3'}
+                                  </div>
+                                )}
                                 
                                 {match.status === 'pending' && team1 && team2 && (
                                   <Button 
@@ -598,59 +887,12 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                   </Button>
                                 )}
 
-                                {match.status === 'in_progress' && draftSession && draftSession.phase === 'waiting' && (
-                                  <Button 
-                                    size="sm"
-                                    onClick={() => setLocation(`/draft-simulator?session=${draftSession.id}`)}
-                                    className="lol-bg-gold hover:lol-bg-accent text-black text-xs"
-                                    data-testid={`go-to-draft-${match.id}`}
-                                  >
-                                    <Play className="w-3 h-3 mr-1" />
-                                    Draft'a Git
-                                  </Button>
-                                )}
-
-                                {match.status === 'in_progress' && draftSession && draftSession.phase !== 'waiting' && draftSession.phase !== 'completed' && (
-                                  <Button 
-                                    size="sm"
-                                    onClick={() => setLocation(`/draft-simulator?session=${draftSession.id}`)}
-                                    className="bg-green-600 hover:bg-green-700 text-white text-xs"
-                                    data-testid={`view-draft-${match.id}`}
-                                  >
-                                    <Eye className="w-3 h-3 mr-1" />
-                                    Draft İzle
-                                  </Button>
-                                )}
-
-                                {match.status === 'in_progress' && !match.winnerId && team1 && team2 && draftSession?.phase === 'completed' && (
-                                  <div className="space-y-1">
-                                    <div className="text-xs lol-text-gray mb-1">Kazanan:</div>
-                                    <Button 
-                                      size="sm"
-                                      onClick={() => setWinnerMutation.mutate({ matchId: match.id, winnerId: team1.id })}
-                                      disabled={setWinnerMutation.isPending}
-                                      className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
-                                      data-testid={`set-winner-team1-${match.id}`}
-                                    >
-                                      {team1.name}
-                                    </Button>
-                                    <Button 
-                                      size="sm"
-                                      onClick={() => setWinnerMutation.mutate({ matchId: match.id, winnerId: team2.id })}
-                                      disabled={setWinnerMutation.isPending}
-                                      className="w-full text-xs bg-red-600 hover:bg-red-700 text-white"
-                                      data-testid={`set-winner-team2-${match.id}`}
-                                    >
-                                      {team2.name}
-                                    </Button>
-                                  </div>
-                                )}
+                                <MatchDraftControls match={match} team1={team1 || null} team2={team2 || null} />
                               </div>
                             </div>
 
-                            {/* Show draft results for in_progress and completed matches */}
                             {(match.status === 'in_progress' || match.status === 'completed') && (
-                              <DraftResults matchId={match.id} />
+                              <MatchDraftResults matchId={match.id} match={match} />
                             )}
                           </div>
                         );

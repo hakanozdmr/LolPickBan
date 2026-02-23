@@ -7,6 +7,7 @@ interface ChampionGridProps {
   onChampionSelect: (champion: Champion) => void;
   bannedChampions: string[];
   pickedChampions: string[];
+  fearlessBannedChampions?: string[];
   onChampionHover?: () => void;
 }
 
@@ -16,9 +17,11 @@ export function ChampionGrid({
   onChampionSelect,
   bannedChampions,
   pickedChampions,
+  fearlessBannedChampions = [],
   onChampionHover 
 }: ChampionGridProps) {
   const getChampionStatus = (champion: Champion) => {
+    if (fearlessBannedChampions.includes(champion.id)) return 'fearless';
     if (bannedChampions.includes(champion.id)) return 'banned';
     if (pickedChampions.includes(champion.id)) return 'picked';
     if (selectedChampion?.id === champion.id) return 'selected';
@@ -31,6 +34,8 @@ export function ChampionGrid({
         return 'champion-card-banned cursor-not-allowed';
       case 'picked':
         return 'champion-card-picked cursor-not-allowed';
+      case 'fearless':
+        return 'champion-card-banned cursor-not-allowed opacity-40';
       case 'selected':
         return 'champion-card-selected border-lol-gold scale-105';
       default:
@@ -76,10 +81,17 @@ export function ChampionGrid({
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
                     
-                    {/* Ban overlay */}
                     {status === 'banned' && (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-red-500 text-3xl">🚫</span>
+                      </div>
+                    )}
+                    {status === 'fearless' && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                        <div className="text-center">
+                          <span className="text-orange-400 text-2xl font-bold">F</span>
+                          <div className="text-[8px] text-orange-300 mt-0.5">FEARLESS</div>
+                        </div>
                       </div>
                     )}
                   </div>

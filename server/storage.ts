@@ -10,6 +10,7 @@ export interface IStorage {
   
   getDraftSession(id: string): Promise<DraftSession | undefined>;
   getDraftSessionByMatchId(matchId: string): Promise<DraftSession | undefined>;
+  getDraftSessionsByMatchId(matchId: string): Promise<DraftSession[]>;
   getDraftSessionByTournamentId(tournamentId: string): Promise<DraftSession | undefined>;
   createDraftSession(session: InsertDraftSession): Promise<DraftSession>;
   updateDraftSession(id: string, updates: Partial<DraftSession>): Promise<DraftSession | undefined>;
@@ -220,6 +221,10 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getDraftSessionsByMatchId(matchId: string): Promise<DraftSession[]> {
+    return db.select().from(draftSessions).where(eq(draftSessions.matchId, matchId));
+  }
+
   async getDraftSessionByTournamentId(tournamentId: string): Promise<DraftSession | undefined> {
     const result = await db.select().from(draftSessions).where(eq(draftSessions.tournamentId, tournamentId));
     return result[0];
@@ -239,6 +244,8 @@ export class DatabaseStorage implements IStorage {
       redTeamBans: (session.redTeamBans || []) as string[],
       tournamentId: session.tournamentId || null,
       matchId: session.matchId || null,
+      gameNumber: session.gameNumber || 1,
+      fearlessBannedChampions: (session.fearlessBannedChampions || []) as string[],
       tournamentName: session.tournamentName || null,
       blueTeamName: session.blueTeamName || null,
       redTeamName: session.redTeamName || null,
@@ -305,6 +312,10 @@ export class DatabaseStorage implements IStorage {
   async pickChampion(id: string, championId: string): Promise<DraftSession | undefined> {
     const session = await this.getDraftSession(id);
     if (!session) return undefined;
+
+    if (session.fearlessBannedChampions.includes(championId)) {
+      throw new Error('Champion is fearless-banned from a previous game in this series');
+    }
 
     const step = parseInt(session.phaseStep);
     let updates: Partial<DraftSession> = {};
@@ -468,6 +479,11 @@ export class DatabaseStorage implements IStorage {
       round: match.round,
       position: match.position,
       status: match.status || "pending",
+      seriesFormat: match.seriesFormat || "bo1",
+      fearlessMode: match.fearlessMode || false,
+      team1Wins: match.team1Wins || 0,
+      team2Wins: match.team2Wins || 0,
+      currentGame: match.currentGame || 1,
       scheduledAt: match.scheduledAt || null,
       completedAt: match.completedAt || null,
       createdAt: new Date(),

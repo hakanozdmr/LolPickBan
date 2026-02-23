@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertDraftSessionSchema, insertTournamentSchema, insertTeamSchema, insertMatchSchema, adminLoginSchema, playerLoginSchema, moderatorLoginSchema, moderatorRegisterSchema } from "@shared/schema";
+import { type Match, insertDraftSessionSchema, insertTournamentSchema, insertTeamSchema, insertMatchSchema, adminLoginSchema, playerLoginSchema, moderatorLoginSchema, moderatorRegisterSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -313,19 +313,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Start a draft from a tournament match
+  // Get all draft sessions for a match (multi-game series)
+  app.get("/api/matches/:matchId/drafts", async (req, res) => {
+    try {
+      const drafts = await storage.getDraftSessionsByMatchId(req.params.matchId);
+      res.json(drafts);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch draft sessions" });
+    }
+  });
+
+  // Start a draft from a tournament match (supports multi-game series)
   app.post("/api/matches/:matchId/draft", async (req, res) => {
     try {
-      // Check if draft session already exists (idempotent)
-      const existingDraft = await storage.getDraftSessionByMatchId(req.params.matchId);
-      if (existingDraft) {
-        res.status(200).json(existingDraft);
-        return;
-      }
-
+      const { gameNumber } = req.body;
       const match = await storage.getMatch(req.params.matchId);
       if (!match) {
         res.status(404).json({ message: "Match not found" });
+        return;
+      }
+
+      const targetGameNumber = gameNumber || match.currentGame || 1;
+
+      // Check if draft session already exists for this specific game
+      const allDrafts = await storage.getDraftSessionsByMatchId(req.params.matchId);
+      const existingDraft = allDrafts.find(d => d.gameNumber === targetGameNumber);
+      if (existingDraft) {
+        res.status(200).json(existingDraft);
         return;
       }
 
@@ -333,6 +347,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tournament = await storage.getTournament(match.tournamentId);
       const blueTeam = match.team1Id ? await storage.getTeam(match.team1Id) : null;
       const redTeam = match.team2Id ? await storage.getTeam(match.team2Id) : null;
+
+      // Collect fearless banned champions from previous games in the series
+      let fearlessBannedChampions: string[] = [];
+      if (match.fearlessMode && targetGameNumber > 1) {
+        const previousDrafts = allDrafts.filter(d => d.gameNumber < targetGameNumber && d.phase === 'completed');
+        for (const draft of previousDrafts) {
+          fearlessBannedChampions.push(...draft.blueTeamPicks, ...draft.redTeamPicks);
+        }
+        fearlessBannedChampions = Array.from(new Set(fearlessBannedChampions));
+      }
 
       const draftData = {
         phase: "waiting",
@@ -345,6 +369,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         redTeamBans: [],
         tournamentId: match.tournamentId,
         matchId: match.id,
+        gameNumber: targetGameNumber,
+        fearlessBannedChampions,
         tournamentName: tournament?.name || "Turnuva",
         blueTeamName: blueTeam?.name || "Mavi Takım",
         redTeamName: redTeam?.name || "Kırmızı Takım",
@@ -361,8 +387,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid data", errors: error.errors });
       } else {
+        console.error("Failed to create draft from match:", error);
         res.status(500).json({ message: "Failed to create draft from match" });
       }
+    }
+  });
+
+  // Record game winner in a series and advance to next game or complete match
+  app.post("/api/matches/:matchId/game-winner", async (req, res) => {
+    try {
+      const { winnerId } = req.body;
+      const match = await storage.getMatch(req.params.matchId);
+      if (!match) {
+        res.status(404).json({ message: "Match not found" });
+        return;
+      }
+
+      const winsNeeded = match.seriesFormat === 'bo5' ? 3 : match.seriesFormat === 'bo3' ? 2 : 1;
+      
+      let team1Wins = match.team1Wins;
+      let team2Wins = match.team2Wins;
+      
+      if (winnerId === match.team1Id) {
+        team1Wins++;
+      } else if (winnerId === match.team2Id) {
+        team2Wins++;
+      } else {
+        res.status(400).json({ message: "Invalid winner ID" });
+        return;
+      }
+
+      const updates: Partial<Match> = {
+        team1Wins,
+        team2Wins,
+        currentGame: match.currentGame + 1,
+      };
+
+      // Check if a team has won the series
+      if (team1Wins >= winsNeeded) {
+        updates.winnerId = match.team1Id;
+        updates.status = 'completed';
+        updates.completedAt = new Date();
+      } else if (team2Wins >= winsNeeded) {
+        updates.winnerId = match.team2Id;
+        updates.status = 'completed';
+        updates.completedAt = new Date();
+      }
+
+      const updatedMatch = await storage.updateMatch(req.params.matchId, updates);
+      res.json(updatedMatch);
+    } catch (error) {
+      console.error("Failed to record game winner:", error);
+      res.status(500).json({ message: "Failed to record game winner" });
     }
   });
 

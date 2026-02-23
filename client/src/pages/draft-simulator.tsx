@@ -297,6 +297,11 @@ export default function DraftSimulator() {
     return [...draftSession.blueTeamPicks, ...draftSession.redTeamPicks];
   }, [draftSession]);
 
+  const fearlessBannedChampions = useMemo(() => {
+    if (!draftSession) return [];
+    return draftSession.fearlessBannedChampions || [];
+  }, [draftSession]);
+
   const canUserAct = useMemo(() => {
     if (!draftSession) return false;
     if (draftSession.phase === 'waiting' || draftSession.phase === 'completed') return false;
@@ -424,6 +429,7 @@ export default function DraftSimulator() {
           onChampionSelect={handleChampionSelect}
           bannedChampions={bannedChampions}
           pickedChampions={pickedChampions}
+          fearlessBannedChampions={fearlessBannedChampions}
           onChampionHover={playHoverSound}
         />
       </div>

@@ -24,7 +24,7 @@ The storage layer uses an abstraction pattern (`IStorage` interface) implemented
 The application defines database schemas using **Drizzle ORM** with PostgreSQL as the target database. The schema includes:
 
 - **Champions table**: Stores champion metadata including ID, name, title, roles, classes, and image URLs
-- **Draft Sessions table**: Tracks draft state including current phase, active team, timer, and arrays of picked/banned champions for both teams
+- **Draft Sessions table**: Tracks draft state including current phase, active team, timer, arrays of picked/banned champions, game number within a series, and fearless-banned champions from previous games
 - **Admin Users table**: Stores admin credentials with hashed passwords for authentication
 - **Player Access Codes table**: Stores generated access codes for player login with usage tracking
 
@@ -58,6 +58,17 @@ The application includes a three-tier authentication system:
   - Tracks team name, ready status, and join timestamp
 - **Ready Status Polling**: Team lobby polls every 2 seconds for status
 - **Auto-Transition**: When both teams marked ready, automatic redirect to draft
+
+### Fearless Draft & Series System
+The application supports BO1, BO3, and BO5 series formats for tournament matches:
+
+- **Series Format**: Each match can be configured as BO1 (default), BO3, or BO5 during bracket generation
+- **Fearless Mode**: When enabled on BO3/BO5 matches, champions picked in previous games cannot be selected in subsequent games of the same series
+- **Match Schema**: The `matches` table includes `seriesFormat`, `fearlessMode`, `team1Wins`, `team2Wins`, and `currentGame` fields
+- **Draft Session Schema**: The `draftSessions` table includes `gameNumber` and `fearlessBannedChampions` (array of champion IDs from previous games)
+- **Game Winner Flow**: For series matches, use `POST /api/matches/:matchId/game-winner` to record individual game winners; the system automatically tracks wins and determines when a team wins the series
+- **Multiple Drafts per Match**: Series matches support multiple draft sessions (one per game), accessible via `GET /api/matches/:matchId/drafts`
+- **Visual Indicators**: Fearless-banned champions show an orange "F" overlay in the champion grid; series scores and Fearless badges display in the bracket
 
 ### Component Architecture
 The frontend is organized into several key component categories:
