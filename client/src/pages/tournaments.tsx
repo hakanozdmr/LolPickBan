@@ -66,6 +66,33 @@ export default function Tournaments() {
     }
   };
 
+  const handleDeleteTournament = async (tournamentId: string) => {
+    try {
+      const response = await fetch(`/api/tournaments/${tournamentId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) throw new Error('Failed to delete tournament');
+
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      
+      if (selectedTournament?.id === tournamentId) {
+        setSelectedTournament(null);
+      }
+      
+      toast({
+        title: "Turnuva Silindi",
+        description: "Turnuva başarıyla silindi.",
+      });
+    } catch (error) {
+      toast({
+        title: "Hata",
+        description: "Turnuva silinirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const [isCreating, setIsCreating] = useState(false);
   
   const wrappedCreateTournament = async (data: any) => {
@@ -120,6 +147,7 @@ export default function Tournaments() {
               tournaments={tournaments}
               selectedTournament={selectedTournament}
               onSelectTournament={setSelectedTournament}
+              onDeleteTournament={canCreateTournament ? handleDeleteTournament : undefined}
             />
           </div>
 

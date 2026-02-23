@@ -1,13 +1,25 @@
+import { useState } from "react";
 import { Tournament } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Users, Calendar, Settings } from "lucide-react";
+import { Trophy, Users, Calendar, Settings, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface TournamentListProps {
   tournaments: Tournament[];
   selectedTournament: Tournament | null;
   onSelectTournament: (tournament: Tournament) => void;
+  onDeleteTournament?: (tournamentId: string) => void;
 }
 
 const formatStatusText = (status: string) => {
@@ -37,7 +49,16 @@ const getFormatText = (format: string) => {
   }
 };
 
-export function TournamentList({ tournaments, selectedTournament, onSelectTournament }: TournamentListProps) {
+export function TournamentList({ tournaments, selectedTournament, onSelectTournament, onDeleteTournament }: TournamentListProps) {
+  const [deleteTarget, setDeleteTarget] = useState<Tournament | null>(null);
+
+  const handleDelete = () => {
+    if (deleteTarget && onDeleteTournament) {
+      onDeleteTournament(deleteTarget.id);
+      setDeleteTarget(null);
+    }
+  };
+
   if (tournaments.length === 0) {
     return (
       <div className="lol-bg-darker rounded-lg border border-gray-700 p-6">
@@ -104,7 +125,7 @@ export function TournamentList({ tournaments, selectedTournament, onSelectTourna
             </div>
 
             {selectedTournament?.id === tournament.id && (
-              <div className="mt-3 pt-3 border-t border-gray-600">
+              <div className="mt-3 pt-3 border-t border-gray-600 space-y-2">
                 <Button 
                   size="sm" 
                   variant="outline"
@@ -114,11 +135,48 @@ export function TournamentList({ tournaments, selectedTournament, onSelectTourna
                   <Settings className="w-4 h-4 mr-2" />
                   Turnuva Ayarları
                 </Button>
+                {onDeleteTournament && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="w-full border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteTarget(tournament);
+                    }}
+                    data-testid={`tournament-delete-${tournament.id}`}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Turnuvayı Sil
+                  </Button>
+                )}
               </div>
             )}
           </div>
         </div>
       ))}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="lol-bg-darker border-gray-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Turnuvayı Sil</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              <span className="font-semibold text-white">{deleteTarget?.name}</span> turnuvasını silmek istediğinize emin misiniz? Bu işlem geri alınamaz. Turnuvaya ait tüm takımlar, maçlar ve bracket verileri silinecektir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600">
+              İptal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

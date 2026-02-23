@@ -426,7 +426,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTournament(id: string): Promise<boolean> {
-    const result = await db.delete(tournaments).where(eq(tournaments.id, id));
+    await db.delete(tournamentTeamCodes).where(eq(tournamentTeamCodes.tournamentId, id));
+    await db.delete(matches).where(eq(matches.tournamentId, id));
+    await db.delete(teams).where(eq(teams.tournamentId, id));
+    await db.delete(tournaments).where(eq(tournaments.id, id));
     return true;
   }
 
