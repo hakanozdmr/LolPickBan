@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Check, Clock, Users, Loader2, Shield, Gamepad2 } from "lucide-react";
+import { Check, Clock, Users, Loader2, Shield, Trophy } from "lucide-react";
 import { Footer } from "@/components/footer";
 
 interface TeamSession {
@@ -127,8 +127,8 @@ export default function TeamLobby() {
       <div className="lol-bg-darker border-b border-gray-700 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Gamepad2 className="w-8 h-8 lol-text-gold" />
-            <span className="text-xl font-bold lol-text-gold">LoL Draft Simulator</span>
+            <Trophy className="w-8 h-8 lol-text-gold" />
+            <span className="text-xl font-bold lol-text-gold">LoL Turnuva</span>
           </div>
           <Button 
             variant="ghost" 

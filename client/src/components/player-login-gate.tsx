@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { LogIn, Gamepad2, Users, Shield } from "lucide-react";
+import { LogIn, Trophy, Users, Shield } from "lucide-react";
 import { Footer } from "./footer";
 import { useLocation } from "wouter";
 
@@ -106,9 +106,9 @@ export function PlayerLoginGate({ children }: PlayerLoginGateProps) {
         <Card className="w-full max-w-md lol-bg-darker border-gray-700">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              <Gamepad2 className="w-16 h-16 lol-text-gold" />
+              <Trophy className="w-16 h-16 lol-text-gold" />
             </div>
-            <CardTitle className="text-2xl lol-text-gold">LoL Draft Simulator</CardTitle>
+            <CardTitle className="text-2xl lol-text-gold">LoL Turnuva Sistemi</CardTitle>
             <CardDescription className="text-gray-400">
               {loginType === "moderator" 
                 ? "Moderatör hesabınızla giriş yapın"

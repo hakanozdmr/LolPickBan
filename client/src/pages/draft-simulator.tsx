@@ -396,7 +396,7 @@ export default function DraftSimulator() {
   if (championsLoading || draftLoading || !draftSession) {
     return (
       <div className="min-h-screen lol-bg-dark flex items-center justify-center">
-        <div className="text-white text-xl">Loading Draft Simulator...</div>
+        <div className="text-white text-xl">Yükleniyor...</div>
       </div>
     );
   }

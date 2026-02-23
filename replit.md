@@ -1,8 +1,8 @@
-# League of Legends Draft Simulator
+# LoL Turnuva Yönetim Sistemi
 
 ## Overview
 
-This is a League of Legends champion draft simulator built as a full-stack web application. The application simulates the draft phase experience from competitive League of Legends matches, allowing users to practice pick/ban strategies in a realistic environment. The simulator includes champion filtering, draft phase progression, team-based selections, real-time state management for both picks and bans across blue and red teams, and authentic League of Legends audio including epic draft music and champion pick/ban sound effects.
+This is a League of Legends tournament management system built as a full-stack web application. The application provides comprehensive tournament creation, bracket management, team code-based authentication, and an integrated draft simulator for pick/ban phases. It supports single-elimination brackets with automatic round progression, BO1/BO3/BO5 series formats, Fearless draft mode, and real-time state management for both picks and bans across blue and red teams.
 
 ## User Preferences
 
