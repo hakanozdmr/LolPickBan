@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Play, Copy, Check, Users, Loader2 } from "lucide-react";
+import { Play, Copy, Check, Users, Loader2, Swords, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
@@ -178,15 +178,22 @@ export function StartDraftModal({
   if (step === 'loading') {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="lol-bg-darker border-gray-700 text-white max-w-md">
+        <DialogContent className="bg-gray-900 border-gray-700/50 text-white max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 lol-text-gold">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Yükleniyor
+            <DialogTitle className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/30 flex items-center justify-center">
+                <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+              </div>
+              <span className="lol-gradient-text text-lg font-bold">Yükleniyor</span>
             </DialogTitle>
           </DialogHeader>
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-8 h-8 animate-spin text-lol-gold" />
+          <div className="flex items-center justify-center py-10">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500/10 to-amber-700/10 border border-amber-500/20 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
+              </div>
+              <span className="text-xs text-gray-500">Veriler kontrol ediliyor...</span>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -196,34 +203,37 @@ export function StartDraftModal({
   if (step === 'codes' && teamCodes) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="lol-bg-darker border-gray-700 text-white max-w-md">
+        <DialogContent className="bg-gray-900 border-gray-700/50 text-white max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 lol-text-gold">
-              <Users className="w-5 h-5" />
-              Takım Kodları
+            <DialogTitle className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/30 flex items-center justify-center">
+                <Shield className="w-4 h-4 text-amber-400" />
+              </div>
+              <span className="lol-gradient-text text-lg font-bold">Takım Kodları</span>
             </DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogDescription className="text-gray-500 text-xs mt-1">
               Aşağıdaki kodları takımlara gönderin. Takımlar bu kodlarla bekleme odasına katılabilir.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="p-4 bg-blue-900/30 border border-blue-500 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-blue-400" />
-                <span className="text-blue-400 font-medium">
+          <div className="space-y-3 mt-1">
+            <div className="rounded-xl border border-blue-500/20 bg-gradient-to-br from-blue-900/20 to-blue-950/30 p-4 relative overflow-hidden">
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-400 to-blue-600" />
+              <div className="flex items-center gap-2 mb-2.5 ml-2">
+                <Users className="w-3.5 h-3.5 text-blue-400" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-blue-400">
                   {teamCodes.blueCode.teamName || "Mavi Takım"}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-blue-900/50 px-3 py-2 rounded font-mono text-lg tracking-widest text-white">
+              <div className="flex items-center gap-2 ml-2">
+                <code className="flex-1 bg-gray-800/60 border border-gray-700/40 px-3 py-2.5 rounded-lg font-mono text-base tracking-[0.2em] text-white">
                   {teamCodes.blueCode.code}
                 </code>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => copyToClipboard(teamCodes.blueCode.code)}
-                  className="text-blue-400 hover:text-blue-300"
+                  className="h-10 w-10 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg"
                   data-testid="copy-blue-code"
                 >
                   {copiedCode === teamCodes.blueCode.code ? (
@@ -235,22 +245,23 @@ export function StartDraftModal({
               </div>
             </div>
 
-            <div className="p-4 bg-red-900/30 border border-red-500 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-red-400" />
-                <span className="text-red-400 font-medium">
+            <div className="rounded-xl border border-red-500/20 bg-gradient-to-br from-red-900/20 to-red-950/30 p-4 relative overflow-hidden">
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-red-400 to-red-600" />
+              <div className="flex items-center gap-2 mb-2.5 ml-2">
+                <Users className="w-3.5 h-3.5 text-red-400" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-red-400">
                   {teamCodes.redCode.teamName || "Kırmızı Takım"}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-red-900/50 px-3 py-2 rounded font-mono text-lg tracking-widest text-white">
+              <div className="flex items-center gap-2 ml-2">
+                <code className="flex-1 bg-gray-800/60 border border-gray-700/40 px-3 py-2.5 rounded-lg font-mono text-base tracking-[0.2em] text-white">
                   {teamCodes.redCode.code}
                 </code>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => copyToClipboard(teamCodes.redCode.code)}
-                  className="text-red-400 hover:text-red-300"
+                  className="h-10 w-10 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg"
                   data-testid="copy-red-code"
                 >
                   {copiedCode === teamCodes.redCode.code ? (
@@ -262,15 +273,15 @@ export function StartDraftModal({
               </div>
             </div>
 
-            <p className="text-xs text-gray-400 text-center">
+            <p className="text-[10px] text-gray-500 text-center py-1">
               Bu kodları kaydedin! Takımlar bu kodları kullanarak bekleme odasına katılabilir.
             </p>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-1">
               <Button
                 variant="outline"
                 onClick={handleClose}
-                className="flex-1 border-gray-600 hover:text-white hover:lol-bg-dark text-[#000000]"
+                className="flex-1 bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:text-white"
                 data-testid="close-codes-modal"
               >
                 Kapat
@@ -278,7 +289,7 @@ export function StartDraftModal({
               <Button
                 onClick={handleGoToDraft}
                 disabled={isLoading}
-                className="flex-1 lol-bg-gold hover:lol-bg-accent text-black font-medium"
+                className="flex-1 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-medium border-0 shadow-lg shadow-amber-900/20"
                 data-testid="go-to-draft-button"
               >
                 {isLoading ? (
@@ -302,20 +313,23 @@ export function StartDraftModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="lol-bg-darker border-gray-700 text-white max-w-md">
+      <DialogContent className="bg-gray-900 border-gray-700/50 text-white max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 lol-text-gold">
-            <Play className="w-5 h-5" />
-            Draft Başlat
+          <DialogTitle className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/30 flex items-center justify-center">
+              <Swords className="w-4 h-4 text-amber-400" />
+            </div>
+            <span className="lol-gradient-text text-lg font-bold">Draft Başlat</span>
           </DialogTitle>
-          <DialogDescription className="text-gray-400">
+          <DialogDescription className="text-gray-500 text-xs mt-1">
             Takım adlarını girin ve takım kodlarını oluşturun.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="blue-team-name" className="text-sm font-medium text-blue-400">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-1">
+          <div className="space-y-1.5">
+            <Label htmlFor="blue-team-name" className="text-xs uppercase tracking-wider text-blue-400 mb-1.5 flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
               Mavi Takım Adı
             </Label>
             <Input
@@ -323,13 +337,14 @@ export function StartDraftModal({
               value={formData.blueTeamName}
               onChange={(e) => setFormData({ ...formData, blueTeamName: e.target.value })}
               placeholder="Mavi Takım"
-              className="lol-bg-dark border-blue-600/50 text-white"
+              className="bg-gray-800/50 border-blue-500/20 text-white placeholder:text-gray-600 focus:border-blue-400/50 focus:ring-blue-500/20"
               data-testid="blue-team-name-input"
             />
           </div>
           
-          <div>
-            <Label htmlFor="red-team-name" className="text-sm font-medium text-red-400">
+          <div className="space-y-1.5">
+            <Label htmlFor="red-team-name" className="text-xs uppercase tracking-wider text-red-400 mb-1.5 flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-red-500" />
               Kırmızı Takım Adı
             </Label>
             <Input
@@ -337,18 +352,18 @@ export function StartDraftModal({
               value={formData.redTeamName}
               onChange={(e) => setFormData({ ...formData, redTeamName: e.target.value })}
               placeholder="Kırmızı Takım"
-              className="lol-bg-dark border-red-600/50 text-white"
+              className="bg-gray-800/50 border-red-500/20 text-white placeholder:text-gray-600 focus:border-red-400/50 focus:ring-red-500/20"
               data-testid="red-team-name-input"
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-3">
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               disabled={isLoading}
-              className="flex-1 border-gray-600 hover:text-white hover:lol-bg-dark text-[#000000]"
+              className="flex-1 bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:text-white"
               data-testid="cancel-draft-button"
             >
               İptal
@@ -356,10 +371,17 @@ export function StartDraftModal({
             <Button
               type="submit"
               disabled={isLoading}
-              className="flex-1 lol-bg-gold hover:lol-bg-accent text-black font-medium"
+              className="flex-1 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-medium border-0 shadow-lg shadow-amber-900/20"
               data-testid="generate-codes-button"
             >
-              {isLoading ? "Oluşturuluyor..." : "Kodları Oluştur"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Oluşturuluyor...
+                </>
+              ) : (
+                "Kodları Oluştur"
+              )}
             </Button>
           </div>
         </form>

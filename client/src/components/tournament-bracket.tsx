@@ -1,12 +1,11 @@
 import { Tournament, Team, Match, DraftSession, Champion } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Play, Users, Plus, Gamepad2, Shield, Sword, Eye, Check, Clock, Flame } from "lucide-react";
+import { Play, Users, Plus, Gamepad2, Shield, Sword, Eye, Check, Clock, Flame, Crown, Swords, Trophy } from "lucide-react";
 import { useState } from "react";
 import { AddTeamModal } from "@/components/add-team-modal";
 import { StartDraftModal } from "@/components/start-draft-modal";
@@ -34,6 +33,36 @@ interface TournamentBracketProps {
   teams: Team[];
   matches: Match[];
 }
+
+const getStatusConfig = (status: string) => {
+  switch (status) {
+    case 'setup': return {
+      text: 'Hazırlık',
+      dotColor: 'text-amber-400',
+      bgClass: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+    };
+    case 'pending': return {
+      text: 'Bekliyor',
+      dotColor: 'text-amber-400',
+      bgClass: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+    };
+    case 'in_progress': return {
+      text: 'Devam Ediyor',
+      dotColor: 'text-emerald-400',
+      bgClass: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+    };
+    case 'completed': return {
+      text: 'Tamamlandı',
+      dotColor: 'text-sky-400',
+      bgClass: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
+    };
+    default: return {
+      text: status,
+      dotColor: 'text-gray-400',
+      bgClass: 'bg-gray-500/10 text-gray-300 border-gray-500/30',
+    };
+  }
+};
 
 export function TournamentBracket({ tournament, teams, matches }: TournamentBracketProps) {
   const { toast } = useToast();
@@ -200,7 +229,6 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
     },
   });
 
-  // Component to display draft results
   const DraftResults = ({ matchId }: { matchId: string }) => {
     const { data: draftSession } = useQuery<DraftSession | null>({
       queryKey: ['/api/matches', matchId, 'draft'],
@@ -215,28 +243,27 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
     const getChampionById = (id: string) => champions.find(c => c.id === id);
 
     return (
-      <div className="mt-3 pt-3 border-t border-gray-600">
+      <div className="mt-3 pt-3 border-t border-gray-700/50">
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs lol-text-gray">Draft Sonuçları:</div>
+          <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">Draft Sonuçları</div>
           <Button
             size="sm"
             variant="ghost"
             onClick={() => setDraftModalMatchId(matchId)}
-            className="text-xs lol-text-blue hover:lol-bg-blue/20"
+            className="text-xs text-sky-400 hover:text-sky-300 hover:bg-sky-500/10"
             data-testid={`view-draft-details-${matchId}`}
           >
             <Eye className="w-3 h-3 mr-1" />
             Detaylar
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          {/* Blue Team */}
-          <div>
-            <div className="lol-text-blue mb-1 font-semibold">{draftSession.blueTeamName}</div>
-            <div className="space-y-1">
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="rounded-lg bg-blue-500/5 border border-blue-500/20 p-2.5">
+            <div className="text-blue-400 mb-1.5 font-semibold text-[11px]">{draftSession.blueTeamName}</div>
+            <div className="space-y-1.5">
               <div className="flex items-center gap-1">
-                <Sword className="w-3 h-3 lol-text-gold" />
-                <span className="lol-text-gray">Picks:</span>
+                <Sword className="w-3 h-3 text-amber-400" />
+                <span className="text-gray-500 text-[10px] uppercase tracking-wider">Picks</span>
               </div>
               <div className="flex flex-wrap gap-1">
                 {draftSession.blueTeamPicks.map((championId, index) => {
@@ -246,15 +273,15 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                       key={`blue-pick-${index}`}
                       src={champion.image}
                       alt={champion.name}
-                      className="w-6 h-6 rounded border border-blue-500"
+                      className="w-6 h-6 rounded border border-blue-500/50"
                       title={champion.name}
                     />
                   ) : null;
                 })}
               </div>
-              <div className="flex items-center gap-1 mt-2">
-                <Shield className="w-3 h-3 lol-text-red" />
-                <span className="lol-text-gray">Bans:</span>
+              <div className="flex items-center gap-1 mt-1.5">
+                <Shield className="w-3 h-3 text-red-400" />
+                <span className="text-gray-500 text-[10px] uppercase tracking-wider">Bans</span>
               </div>
               <div className="flex flex-wrap gap-1">
                 {draftSession.blueTeamBans.map((championId, index) => {
@@ -264,7 +291,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                       key={`blue-ban-${index}`}
                       src={champion.image}
                       alt={champion.name}
-                      className="w-4 h-4 rounded border border-red-500 opacity-60"
+                      className="w-4 h-4 rounded border border-red-500/40 opacity-50 grayscale"
                       title={`${champion.name} (Banned)`}
                     />
                   ) : null;
@@ -273,13 +300,12 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
             </div>
           </div>
 
-          {/* Red Team */}
-          <div>
-            <div className="lol-text-red mb-1 font-semibold">{draftSession.redTeamName}</div>
-            <div className="space-y-1">
+          <div className="rounded-lg bg-red-500/5 border border-red-500/20 p-2.5">
+            <div className="text-red-400 mb-1.5 font-semibold text-[11px]">{draftSession.redTeamName}</div>
+            <div className="space-y-1.5">
               <div className="flex items-center gap-1">
-                <Sword className="w-3 h-3 lol-text-gold" />
-                <span className="lol-text-gray">Picks:</span>
+                <Sword className="w-3 h-3 text-amber-400" />
+                <span className="text-gray-500 text-[10px] uppercase tracking-wider">Picks</span>
               </div>
               <div className="flex flex-wrap gap-1">
                 {draftSession.redTeamPicks.map((championId, index) => {
@@ -289,15 +315,15 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                       key={`red-pick-${index}`}
                       src={champion.image}
                       alt={champion.name}
-                      className="w-6 h-6 rounded border border-red-500"
+                      className="w-6 h-6 rounded border border-red-500/50"
                       title={champion.name}
                     />
                   ) : null;
                 })}
               </div>
-              <div className="flex items-center gap-1 mt-2">
-                <Shield className="w-3 h-3 lol-text-red" />
-                <span className="lol-text-gray">Bans:</span>
+              <div className="flex items-center gap-1 mt-1.5">
+                <Shield className="w-3 h-3 text-red-400" />
+                <span className="text-gray-500 text-[10px] uppercase tracking-wider">Bans</span>
               </div>
               <div className="flex flex-wrap gap-1">
                 {draftSession.redTeamBans.map((championId, index) => {
@@ -307,7 +333,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                       key={`red-ban-${index}`}
                       src={champion.image}
                       alt={champion.name}
-                      className="w-4 h-4 rounded border border-red-500 opacity-60"
+                      className="w-4 h-4 rounded border border-red-500/40 opacity-50 grayscale"
                       title={`${champion.name} (Banned)`}
                     />
                   ) : null;
@@ -320,7 +346,6 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
     );
   };
 
-  // Draft Details Modal Component
   const DraftDetailsModal = ({ matchId, isOpen, onClose }: { matchId: string; isOpen: boolean; onClose: () => void }) => {
     const { data: draftSession } = useQuery<DraftSession | null>({
       queryKey: ['/api/matches', matchId, 'draft'],
@@ -341,121 +366,124 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
 
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto lol-bg-darker border-gray-700">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-900 border-gray-700/50">
           <DialogTitle className="sr-only">Draft Detayları</DialogTitle>
           <div className="space-y-6">
-            {/* Teams Overview */}
             <div className="grid grid-cols-2 gap-6">
-              {/* Blue Team */}
-              <div className="lol-bg-dark rounded-lg p-4">
-                <h3 className="lol-text-blue text-lg font-semibold mb-4">
+              <div className="rounded-xl bg-gradient-to-b from-blue-500/10 to-gray-900/50 border border-blue-500/20 p-5">
+                <h3 className="text-blue-400 text-lg font-semibold mb-4 flex items-center gap-2">
+                  <div className="w-2 h-6 rounded-full bg-blue-500" />
                   {draftSession.blueTeamName}
                 </h3>
                 
-                {/* Picks */}
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sword className="w-4 h-4 lol-text-gold" />
-                    <span className="font-medium text-white">Picks</span>
+                <div className="mb-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sword className="w-4 h-4 text-amber-400" />
+                    <span className="font-medium text-gray-200 text-sm uppercase tracking-wider">Picks</span>
                   </div>
                   <div className="grid grid-cols-5 gap-2">
                     {draftSession.blueTeamPicks.map((championId, index) => {
                       const champion = getChampionById(championId);
                       return champion ? (
-                        <div key={`blue-pick-${index}`} className="text-center">
-                          <img
-                            src={champion.image}
-                            alt={champion.name}
-                            className="w-16 h-16 rounded-lg border-2 border-blue-500 mb-1"
-                          />
-                          <div className="text-xs text-white font-medium">{champion.name}</div>
-                          <div className="text-xs lol-text-gray">{champion.title}</div>
+                        <div key={`blue-pick-${index}`} className="text-center group">
+                          <div className="relative rounded-lg overflow-hidden border-2 border-blue-500/50 mb-1 transition-all group-hover:border-blue-400">
+                            <img
+                              src={champion.image}
+                              alt={champion.name}
+                              className="w-full aspect-square object-cover"
+                            />
+                          </div>
+                          <div className="text-xs text-gray-200 font-medium truncate">{champion.name}</div>
+                          <div className="text-[10px] text-gray-500 truncate">{champion.title}</div>
                         </div>
                       ) : (
-                        <div key={`blue-pick-${index}`} className="w-16 h-16 rounded-lg border-2 border-gray-500 bg-gray-800"></div>
+                        <div key={`blue-pick-${index}`} className="aspect-square rounded-lg border-2 border-gray-700/50 bg-gray-800/50" />
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Bans */}
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="w-4 h-4 lol-text-red" />
-                    <span className="font-medium text-white">Bans</span>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Shield className="w-4 h-4 text-red-400" />
+                    <span className="font-medium text-gray-200 text-sm uppercase tracking-wider">Bans</span>
                   </div>
                   <div className="grid grid-cols-5 gap-2">
                     {draftSession.blueTeamBans.map((championId, index) => {
                       const champion = getChampionById(championId);
                       return champion ? (
                         <div key={`blue-ban-${index}`} className="text-center">
-                          <img
-                            src={champion.image}
-                            alt={champion.name}
-                            className="w-12 h-12 rounded-lg border-2 border-red-500 opacity-60 mb-1"
-                          />
-                          <div className="text-xs text-white">{champion.name}</div>
+                          <div className="relative rounded-lg overflow-hidden border-2 border-red-500/30 mb-1 opacity-50 grayscale">
+                            <img
+                              src={champion.image}
+                              alt={champion.name}
+                              className="w-full aspect-square object-cover"
+                            />
+                          </div>
+                          <div className="text-[10px] text-gray-400 truncate">{champion.name}</div>
                         </div>
                       ) : (
-                        <div key={`blue-ban-${index}`} className="w-12 h-12 rounded-lg border-2 border-gray-500 bg-gray-800 opacity-60"></div>
+                        <div key={`blue-ban-${index}`} className="aspect-square rounded-lg border-2 border-gray-700/50 bg-gray-800/50 opacity-50" />
                       );
                     })}
                   </div>
                 </div>
               </div>
 
-              {/* Red Team */}
-              <div className="lol-bg-dark rounded-lg p-4">
-                <h3 className="lol-text-red text-lg font-semibold mb-4">
+              <div className="rounded-xl bg-gradient-to-b from-red-500/10 to-gray-900/50 border border-red-500/20 p-5">
+                <h3 className="text-red-400 text-lg font-semibold mb-4 flex items-center gap-2">
+                  <div className="w-2 h-6 rounded-full bg-red-500" />
                   {draftSession.redTeamName}
                 </h3>
                 
-                {/* Picks */}
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sword className="w-4 h-4 lol-text-gold" />
-                    <span className="font-medium text-white">Picks</span>
+                <div className="mb-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sword className="w-4 h-4 text-amber-400" />
+                    <span className="font-medium text-gray-200 text-sm uppercase tracking-wider">Picks</span>
                   </div>
                   <div className="grid grid-cols-5 gap-2">
                     {draftSession.redTeamPicks.map((championId, index) => {
                       const champion = getChampionById(championId);
                       return champion ? (
-                        <div key={`red-pick-${index}`} className="text-center">
-                          <img
-                            src={champion.image}
-                            alt={champion.name}
-                            className="w-16 h-16 rounded-lg border-2 border-red-500 mb-1"
-                          />
-                          <div className="text-xs text-white font-medium">{champion.name}</div>
-                          <div className="text-xs lol-text-gray">{champion.title}</div>
+                        <div key={`red-pick-${index}`} className="text-center group">
+                          <div className="relative rounded-lg overflow-hidden border-2 border-red-500/50 mb-1 transition-all group-hover:border-red-400">
+                            <img
+                              src={champion.image}
+                              alt={champion.name}
+                              className="w-full aspect-square object-cover"
+                            />
+                          </div>
+                          <div className="text-xs text-gray-200 font-medium truncate">{champion.name}</div>
+                          <div className="text-[10px] text-gray-500 truncate">{champion.title}</div>
                         </div>
                       ) : (
-                        <div key={`red-pick-${index}`} className="w-16 h-16 rounded-lg border-2 border-gray-500 bg-gray-800"></div>
+                        <div key={`red-pick-${index}`} className="aspect-square rounded-lg border-2 border-gray-700/50 bg-gray-800/50" />
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Bans */}
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="w-4 h-4 lol-text-red" />
-                    <span className="font-medium text-white">Bans</span>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Shield className="w-4 h-4 text-red-400" />
+                    <span className="font-medium text-gray-200 text-sm uppercase tracking-wider">Bans</span>
                   </div>
                   <div className="grid grid-cols-5 gap-2">
                     {draftSession.redTeamBans.map((championId, index) => {
                       const champion = getChampionById(championId);
                       return champion ? (
                         <div key={`red-ban-${index}`} className="text-center">
-                          <img
-                            src={champion.image}
-                            alt={champion.name}
-                            className="w-12 h-12 rounded-lg border-2 border-red-500 opacity-60 mb-1"
-                          />
-                          <div className="text-xs text-white">{champion.name}</div>
+                          <div className="relative rounded-lg overflow-hidden border-2 border-red-500/30 mb-1 opacity-50 grayscale">
+                            <img
+                              src={champion.image}
+                              alt={champion.name}
+                              className="w-full aspect-square object-cover"
+                            />
+                          </div>
+                          <div className="text-[10px] text-gray-400 truncate">{champion.name}</div>
                         </div>
                       ) : (
-                        <div key={`red-ban-${index}`} className="w-12 h-12 rounded-lg border-2 border-gray-500 bg-gray-800 opacity-60"></div>
+                        <div key={`red-ban-${index}`} className="aspect-square rounded-lg border-2 border-gray-700/50 bg-gray-800/50 opacity-50" />
                       );
                     })}
                   </div>
@@ -488,13 +516,13 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
       const currentDraftWaiting = currentDraft?.phase === 'waiting';
 
       return (
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {needsGameDraft && (
             <Button
               size="sm"
               onClick={() => startNextGameDraftMutation.mutate({ matchId: match.id, gameNumber: match.currentGame })}
               disabled={startNextGameDraftMutation.isPending}
-              className="lol-bg-gold hover:lol-bg-accent text-black text-xs"
+              className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs shadow-lg shadow-amber-900/20"
             >
               <Play className="w-3 h-3 mr-1" />
               Oyun {match.currentGame} Draft
@@ -505,7 +533,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
             <Button
               size="sm"
               onClick={() => setLocation(`/draft-simulator?session=${currentDraft.id}`)}
-              className="lol-bg-gold hover:lol-bg-accent text-black text-xs"
+              className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs shadow-lg shadow-amber-900/20"
             >
               <Play className="w-3 h-3 mr-1" />
               Draft'a Git
@@ -516,7 +544,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
             <Button
               size="sm"
               onClick={() => setLocation(`/draft-simulator?session=${currentDraft!.id}`)}
-              className="bg-green-600 hover:bg-green-700 text-white text-xs"
+              className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white text-xs shadow-lg shadow-emerald-900/20"
             >
               <Eye className="w-3 h-3 mr-1" />
               Draft İzle
@@ -524,13 +552,13 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
           )}
 
           {currentDraftCompleted && !match.winnerId && (
-            <div className="space-y-1">
-              <div className="text-xs lol-text-gray mb-1">Oyun {match.currentGame} Kazananı:</div>
+            <div className="space-y-1.5">
+              <div className="text-[10px] text-gray-400 mb-1 uppercase tracking-wider font-medium">Oyun {match.currentGame} Kazananı</div>
               <Button
                 size="sm"
                 onClick={() => gameWinnerMutation.mutate({ matchId: match.id, winnerId: team1.id })}
                 disabled={gameWinnerMutation.isPending}
-                className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full text-xs bg-blue-600/80 hover:bg-blue-500 text-white border border-blue-500/30"
               >
                 {team1.name}
               </Button>
@@ -538,7 +566,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                 size="sm"
                 onClick={() => gameWinnerMutation.mutate({ matchId: match.id, winnerId: team2.id })}
                 disabled={gameWinnerMutation.isPending}
-                className="w-full text-xs bg-red-600 hover:bg-red-700 text-white"
+                className="w-full text-xs bg-red-600/80 hover:bg-red-500 text-white border border-red-500/30"
               >
                 {team2.name}
               </Button>
@@ -548,14 +576,13 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
       );
     }
 
-    // BO1 logic (existing behavior)
     return (
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {draftSession && draftSession.phase === 'waiting' && (
           <Button
             size="sm"
             onClick={() => setLocation(`/draft-simulator?session=${draftSession.id}`)}
-            className="lol-bg-gold hover:lol-bg-accent text-black text-xs"
+            className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs shadow-lg shadow-amber-900/20"
           >
             <Play className="w-3 h-3 mr-1" />
             Draft'a Git
@@ -566,7 +593,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
           <Button
             size="sm"
             onClick={() => setLocation(`/draft-simulator?session=${draftSession.id}`)}
-            className="bg-green-600 hover:bg-green-700 text-white text-xs"
+            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white text-xs shadow-lg shadow-emerald-900/20"
           >
             <Eye className="w-3 h-3 mr-1" />
             Draft İzle
@@ -574,13 +601,13 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
         )}
 
         {!match.winnerId && draftSession?.phase === 'completed' && (
-          <div className="space-y-1">
-            <div className="text-xs lol-text-gray mb-1">Kazanan:</div>
+          <div className="space-y-1.5">
+            <div className="text-[10px] text-gray-400 mb-1 uppercase tracking-wider font-medium">Kazanan</div>
             <Button
               size="sm"
               onClick={() => setWinnerMutation.mutate({ matchId: match.id, winnerId: team1.id })}
               disabled={setWinnerMutation.isPending}
-              className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full text-xs bg-blue-600/80 hover:bg-blue-500 text-white border border-blue-500/30"
             >
               {team1.name}
             </Button>
@@ -588,7 +615,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
               size="sm"
               onClick={() => setWinnerMutation.mutate({ matchId: match.id, winnerId: team2.id })}
               disabled={setWinnerMutation.isPending}
-              className="w-full text-xs bg-red-600 hover:bg-red-700 text-white"
+              className="w-full text-xs bg-red-600/80 hover:bg-red-500 text-white border border-red-500/30"
             >
               {team2.name}
             </Button>
@@ -609,23 +636,29 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
       if (allDrafts.length === 0) return null;
 
       return (
-        <div className="mt-3 pt-3 border-t border-gray-600">
-          <div className="text-xs lol-text-gray mb-2">Oyun Draftları:</div>
-          <div className="space-y-2">
+        <div className="mt-3 pt-3 border-t border-gray-700/40">
+          <div className="text-[10px] text-gray-400 mb-2 uppercase tracking-wider font-medium">Oyun Draftları</div>
+          <div className="space-y-1.5">
             {allDrafts
               .sort((a, b) => a.gameNumber - b.gameNumber)
               .map((draft) => (
-                <div key={draft.id} className="flex items-center justify-between p-2 lol-bg-darker rounded">
+                <div key={draft.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-800/40 border border-gray-700/30">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-white">Oyun {draft.gameNumber}</span>
-                    <Badge className={`text-xs ${
-                      draft.phase === 'completed' ? 'bg-blue-500/20 text-blue-300' : 'bg-green-500/20 text-green-300'
-                    } border`}>
+                    <span className="text-xs font-medium text-gray-200">Oyun {draft.gameNumber}</span>
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] px-1.5 py-0 h-4 font-medium border ${
+                        draft.phase === 'completed'
+                          ? 'bg-sky-500/10 text-sky-300 border-sky-500/30'
+                          : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                      }`}
+                    >
                       {draft.phase === 'completed' ? 'Tamamlandı' : 'Devam Ediyor'}
                     </Badge>
                     {draft.fearlessBannedChampions.length > 0 && (
-                      <span className="text-xs text-orange-400">
-                        ({draft.fearlessBannedChampions.length} Fearless ban)
+                      <span className="text-[10px] text-orange-400 flex items-center gap-0.5">
+                        <Flame className="w-2.5 h-2.5" />
+                        {draft.fearlessBannedChampions.length} ban
                       </span>
                     )}
                   </div>
@@ -633,7 +666,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                     size="sm"
                     variant="ghost"
                     onClick={() => setDraftModalMatchId(matchId)}
-                    className="text-xs lol-text-blue hover:lol-bg-blue/20"
+                    className="text-xs text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 h-6 px-2"
                   >
                     <Eye className="w-3 h-3 mr-1" />
                     Detaylar
@@ -650,37 +683,53 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
 
   const canGenerateBracket = teams.length === tournament.maxTeams && matches.length === 0;
   const canAddMoreTeams = teams.length < tournament.maxTeams;
+  const tournamentStatus = getStatusConfig(tournament.status);
 
   return (
-    <div className="space-y-6">
-      <Card className="lol-bg-darker border-gray-700">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="lol-text-gold">{tournament.name}</span>
-            <Badge className={`${
-              tournament.status === 'setup' ? 'bg-yellow-500/20 text-yellow-300' :
-              tournament.status === 'in_progress' ? 'bg-green-500/20 text-green-300' :
-              'bg-blue-500/20 text-blue-300'
-            } border`}>
-              {tournament.status === 'setup' ? 'Hazırlık' :
-               tournament.status === 'in_progress' ? 'Devam Ediyor' : 'Tamamlandı'}
+    <div className="space-y-5">
+      <div className="rounded-xl border border-gray-700/30 bg-gradient-to-b from-gray-800/30 to-gray-900/50 overflow-hidden">
+        <div className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/30 flex items-center justify-center">
+                <Trophy className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h2 className="lol-gradient-text text-lg font-bold">{tournament.name}</h2>
+                {tournament.description && (
+                  <p className="text-xs text-gray-500 mt-0.5">{tournament.description}</p>
+                )}
+              </div>
+            </div>
+            <Badge
+              variant="outline"
+              className={`text-[10px] px-2 py-0.5 h-5 font-medium border ${tournamentStatus.bgClass}`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${tournamentStatus.dotColor} ${tournament.status === 'in_progress' ? 'status-dot-pulse' : ''}`}
+                style={{ backgroundColor: 'currentColor' }}
+              />
+              {tournamentStatus.text}
             </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {tournament.description && (
-            <p className="lol-text-gray mb-4">{tournament.description}</p>
-          )}
-          
+          </div>
+
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm lol-text-gray">
-              <span>Format: {tournament.format === 'single_elimination' ? 'Eleme' : tournament.format}</span>
-              <span>•</span>
-              <span>{teams.length}/{tournament.maxTeams} Takım</span>
+            <div className="flex items-center gap-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <Swords className="w-3 h-3" />
+                {tournament.format === 'single_elimination' ? 'Tek Eleme' : tournament.format}
+              </span>
+              <span className="text-gray-700">•</span>
+              <span className="flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                {teams.length}/{tournament.maxTeams} Takım
+              </span>
               {teams.length < tournament.maxTeams && matches.length === 0 && (
                 <>
-                  <span>•</span>
-                  <span className="text-yellow-400">Bracket oluşturmak için {tournament.maxTeams - teams.length} takım daha gerekli</span>
+                  <span className="text-gray-700">•</span>
+                  <span className="text-amber-400/80 text-[11px]">
+                    {tournament.maxTeams - teams.length} takım daha gerekli
+                  </span>
                 </>
               )}
             </div>
@@ -689,12 +738,11 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
               {canAddMoreTeams && (
                 <Button 
                   size="sm"
-                  variant="outline"
                   onClick={() => setShowAddTeamModal(true)}
-                  className="border-lol-gold lol-text-gold hover:lol-bg-gold hover:text-black"
+                  className="h-8 text-xs bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700 hover:text-white"
                   data-testid="add-team-button"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
                   Takım Ekle
                 </Button>
               )}
@@ -704,10 +752,10 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                   size="sm"
                   onClick={() => generateBracketMutation.mutate()}
                   disabled={generateBracketMutation.isPending}
-                  className="lol-bg-gold hover:lol-bg-accent text-black"
+                  className="h-8 text-xs bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white border-0 shadow-lg shadow-amber-900/20"
                   data-testid="generate-bracket-button"
                 >
-                  <Play className="w-4 h-4 mr-2" />
+                  <Play className="w-3.5 h-3.5 mr-1.5" />
                   Bracket Oluştur
                 </Button>
               )}
@@ -715,16 +763,19 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
           </div>
 
           {canGenerateBracket && (
-            <div className="mt-4 p-4 lol-bg-dark rounded-lg border border-gray-600">
-              <h4 className="text-sm font-semibold lol-text-gold mb-3">Maç Ayarları</h4>
+            <div className="mt-4 p-4 rounded-xl bg-gray-800/30 border border-gray-700/30">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-2">
+                <Gamepad2 className="w-3.5 h-3.5 text-amber-400" />
+                Maç Ayarları
+              </h4>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
-                  <Label className="text-sm text-gray-300">Seri Formatı:</Label>
+                  <Label className="text-xs text-gray-400">Seri Formatı:</Label>
                   <Select value={seriesFormat} onValueChange={setSeriesFormat}>
-                    <SelectTrigger className="w-28 lol-bg-darker border-gray-600 text-white h-8">
+                    <SelectTrigger className="w-28 bg-gray-800/50 border-gray-700/50 text-gray-200 h-8 text-xs focus:ring-amber-500/50">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="lol-bg-darker border-gray-600">
+                    <SelectContent className="bg-gray-900 border-gray-700/50">
                       <SelectItem value="bo1">BO1</SelectItem>
                       <SelectItem value="bo3">BO3</SelectItem>
                       <SelectItem value="bo5">BO5</SelectItem>
@@ -739,12 +790,12 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                       onCheckedChange={setFearlessMode}
                       className="data-[state=checked]:bg-orange-500"
                     />
-                    <Label className="text-sm text-gray-300 flex items-center gap-1">
-                      <Flame className="w-4 h-4 text-orange-400" />
+                    <Label className="text-xs text-gray-400 flex items-center gap-1">
+                      <Flame className="w-3.5 h-3.5 text-orange-400" />
                       Fearless Draft
                     </Label>
                     {fearlessMode && (
-                      <span className="text-xs text-orange-400 ml-1">
+                      <span className="text-[10px] text-orange-400/80 ml-1">
                         (Seçilen şampiyonlar sonraki maçta seçilemez)
                       </span>
                     )}
@@ -753,65 +804,66 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Teams List */}
       {teams.length > 0 && (
-        <Card className="lol-bg-darker border-gray-700">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 lol-text-gold" />
-              Takımlar
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
+        <div className="rounded-xl border border-gray-700/30 bg-gradient-to-b from-gray-800/30 to-gray-900/50 overflow-hidden">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/15 to-amber-700/15 border border-amber-500/20 flex items-center justify-center">
+                <Users className="w-3.5 h-3.5 text-amber-400" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-200 uppercase tracking-wider">Takımlar</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
               {teams.map((team) => (
                 <div 
                   key={team.id}
-                  className="flex items-center gap-3 p-3 lol-bg-dark rounded-lg border border-gray-600"
+                  className="flex items-center gap-3 p-2.5 rounded-lg bg-gray-800/30 border border-gray-700/30 hover:border-gray-600/50 transition-colors"
                   data-testid={`team-item-${team.id}`}
                 >
                   {team.logo ? (
                     <img 
                       src={team.logo} 
                       alt={team.name}
-                      className="w-8 h-8 rounded-full object-cover"
+                      className="w-8 h-8 rounded-lg object-cover border border-gray-700/50"
                     />
                   ) : (
-                    <div className="w-8 h-8 lol-bg-gold rounded-full flex items-center justify-center">
-                      <span className="text-xs font-bold text-black">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-700/30 border border-amber-500/20 flex items-center justify-center">
+                      <span className="text-xs font-bold text-amber-400">
                         {team.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
                   )}
-                  <span className="font-medium text-white">{team.name}</span>
+                  <span className="font-medium text-sm text-gray-200">{team.name}</span>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
-      {/* Bracket Matches */}
       {matches.length > 0 && (
-        <Card className="lol-bg-darker border-gray-700">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Gamepad2 className="w-5 h-5 lol-text-gold" />
-              Turnuva Bracketi
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Group matches by round */}
+        <div className="rounded-xl border border-gray-700/30 bg-gradient-to-b from-gray-800/30 to-gray-900/50 overflow-hidden">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/15 to-amber-700/15 border border-amber-500/20 flex items-center justify-center">
+                <Gamepad2 className="w-3.5 h-3.5 text-amber-400" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-200 uppercase tracking-wider">Turnuva Bracketi</h3>
+            </div>
+            <div className="space-y-5">
               {Array.from(new Set(matches.map(m => m.round))).sort().map(round => (
                 <div key={round}>
-                  <h4 className="font-semibold mb-3 lol-text-accent">
-                    Round {round}
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-px flex-1 bg-gradient-to-r from-amber-500/30 to-transparent" />
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-400/80 px-2">
+                      Round {round}
+                    </h4>
+                    <div className="h-px flex-1 bg-gradient-to-l from-amber-500/30 to-transparent" />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {matches
                       .filter(match => match.round === round)
                       .sort((a, b) => a.position - b.position)
@@ -820,57 +872,72 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                         const team2 = getTeamById(match.team2Id);
                         const winner = getTeamById(match.winnerId);
                         const isSeries = match.seriesFormat === 'bo3' || match.seriesFormat === 'bo5';
+                        const matchStatus = getStatusConfig(match.status);
                         
                         return (
                           <div 
                             key={match.id}
-                            className="lol-bg-dark rounded-lg border border-gray-600 p-4"
+                            className="rounded-xl border border-gray-700/30 bg-gradient-to-br from-gray-800/40 to-gray-900/60 p-4 transition-all hover:border-gray-600/40"
                             data-testid={`match-item-${match.id}`}
                           >
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="space-y-2 flex-1">
-                                <div className={`flex items-center gap-2 ${
-                                  winner?.id === team1?.id ? 'lol-text-gold font-semibold' : 'text-white'
-                                }`}>
-                                  <span>{team1?.name || 'TBD'}</span>
-                                  {isSeries && <span className="text-sm lol-text-gray">({match.team1Wins})</span>}
-                                  {winner?.id === team1?.id && <span>👑</span>}
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="space-y-0.5 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-1 h-5 rounded-full bg-blue-500/70" />
+                                  <span className={`text-sm ${
+                                    winner?.id === team1?.id ? 'text-amber-400 font-semibold' : 'text-gray-200'
+                                  }`}>
+                                    {team1?.name || 'TBD'}
+                                  </span>
+                                  {isSeries && <span className="text-xs text-gray-500 font-mono">({match.team1Wins})</span>}
+                                  {winner?.id === team1?.id && <Crown className="w-3.5 h-3.5 text-amber-400" />}
                                 </div>
-                                <div className="text-sm lol-text-gray">vs</div>
-                                <div className={`flex items-center gap-2 ${
-                                  winner?.id === team2?.id ? 'lol-text-gold font-semibold' : 'text-white'
-                                }`}>
-                                  <span>{team2?.name || 'TBD'}</span>
-                                  {isSeries && <span className="text-sm lol-text-gray">({match.team2Wins})</span>}
-                                  {winner?.id === team2?.id && <span>👑</span>}
+
+                                <div className="flex items-center gap-2 py-0.5 ml-1">
+                                  <div className="h-px w-4 bg-gray-700/50" />
+                                  <span className="text-[10px] text-gray-600 uppercase tracking-widest">vs</span>
+                                  <div className="h-px w-4 bg-gray-700/50" />
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <div className="w-1 h-5 rounded-full bg-red-500/70" />
+                                  <span className={`text-sm ${
+                                    winner?.id === team2?.id ? 'text-amber-400 font-semibold' : 'text-gray-200'
+                                  }`}>
+                                    {team2?.name || 'TBD'}
+                                  </span>
+                                  {isSeries && <span className="text-xs text-gray-500 font-mono">({match.team2Wins})</span>}
+                                  {winner?.id === team2?.id && <Crown className="w-3.5 h-3.5 text-amber-400" />}
                                 </div>
                               </div>
                               
-                              <div className="flex flex-col gap-2 items-end">
-                                <div className="flex items-center gap-1">
-                                  <Badge className={`text-xs ${
-                                    match.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
-                                    match.status === 'in_progress' ? 'bg-green-500/20 text-green-300' :
-                                    'bg-blue-500/20 text-blue-300'
-                                  } border`}>
-                                    {match.status === 'pending' ? 'Bekliyor' :
-                                     match.status === 'in_progress' ? 'Devam Ediyor' : 'Tamamlandı'}
+                              <div className="flex flex-col gap-1.5 items-end">
+                                <div className="flex items-center gap-1 flex-wrap justify-end">
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[10px] px-1.5 py-0 h-4 font-medium border ${matchStatus.bgClass}`}
+                                  >
+                                    <span
+                                      className={`w-1 h-1 rounded-full mr-1 inline-block ${matchStatus.dotColor} ${match.status === 'in_progress' ? 'status-dot-pulse' : ''}`}
+                                      style={{ backgroundColor: 'currentColor' }}
+                                    />
+                                    {matchStatus.text}
                                   </Badge>
                                   {isSeries && (
-                                    <Badge className="text-xs bg-purple-500/20 text-purple-300 border">
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-medium bg-purple-500/10 text-purple-300 border-purple-500/30">
                                       {match.seriesFormat.toUpperCase()}
                                     </Badge>
                                   )}
                                   {match.fearlessMode && (
-                                    <Badge className="text-xs bg-orange-500/20 text-orange-300 border flex items-center gap-1">
-                                      <Flame className="w-3 h-3" />
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-medium bg-orange-500/10 text-orange-300 border-orange-500/30 flex items-center gap-0.5">
+                                      <Flame className="w-2.5 h-2.5" />
                                       Fearless
                                     </Badge>
                                   )}
                                 </div>
 
                                 {isSeries && match.status === 'in_progress' && (
-                                  <div className="text-xs lol-text-gray">
+                                  <div className="text-[10px] text-gray-500">
                                     Oyun {match.currentGame} / {match.seriesFormat === 'bo5' ? '5' : '3'}
                                   </div>
                                 )}
@@ -879,7 +946,7 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                                   <Button 
                                     size="sm"
                                     onClick={() => setStartDraftMatch(match)}
-                                    className="lol-bg-gold hover:lol-bg-accent text-black text-xs"
+                                    className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs h-7 shadow-lg shadow-amber-900/20"
                                     data-testid={`start-draft-${match.id}`}
                                   >
                                     <Play className="w-3 h-3 mr-1" />
@@ -901,8 +968,8 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       <AddTeamModal
@@ -912,7 +979,6 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
         isLoading={addTeamMutation.isPending}
       />
 
-      {/* Draft Details Modal */}
       {draftModalMatchId && (
         <DraftDetailsModal
           matchId={draftModalMatchId}
@@ -921,7 +987,6 @@ export function TournamentBracket({ tournament, teams, matches }: TournamentBrac
         />
       )}
 
-      {/* Start Draft Modal */}
       {startDraftMatch && (
         <StartDraftModal
           isOpen={!!startDraftMatch}
