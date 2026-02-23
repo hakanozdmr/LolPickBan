@@ -1,10 +1,12 @@
 import { useRef, useCallback } from 'react';
 import { AudioGenerator, GENERATED_SOUNDS } from '../utils/audio-generator';
+import { getChampionPickVoiceUrl, getChampionBanVoiceUrl } from '../utils/champion-keys';
 
 export function useAudio(globalVolume: number = 50, preferYouTube: boolean = true) {
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
   const draftMusicSource = useRef<AudioBufferSourceNode | null>(null);
   const youtubeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const championVoiceRef = useRef<HTMLAudioElement | null>(null);
   const volumeMultiplier = globalVolume / 100;
 
   const playGeneratedSound = useCallback((buffer: AudioBuffer | null, volume: number = 0.5) => {
@@ -22,7 +24,7 @@ export function useAudio(globalVolume: number = 50, preferYouTube: boolean = tru
       if (!audioRefs.current[soundName]) {
         audioRefs.current[soundName] = new Audio(`/sounds/${soundName}.mp3`);
       }
-      
+
       const audio = audioRefs.current[soundName];
       audio.volume = volume * volumeMultiplier;
       audio.currentTime = 0;
@@ -48,6 +50,35 @@ export function useAudio(globalVolume: number = 50, preferYouTube: boolean = tru
     }
   }, [playGeneratedSound, volumeMultiplier]);
 
+  // Play champion voice line from CommunityDragon CDN
+  const playChampionVoice = useCallback((url: string, volume: number = 0.8) => {
+    try {
+      // Stop any currently playing champion voice
+      if (championVoiceRef.current) {
+        championVoiceRef.current.pause();
+        championVoiceRef.current = null;
+      }
+
+      const audio = new Audio(url);
+      audio.volume = volume * volumeMultiplier;
+      audio.crossOrigin = 'anonymous';
+      championVoiceRef.current = audio;
+
+      audio.play().catch((err) => {
+        console.warn('Could not play champion voice:', err);
+      });
+
+      // Cleanup when audio ends
+      audio.addEventListener('ended', () => {
+        if (championVoiceRef.current === audio) {
+          championVoiceRef.current = null;
+        }
+      });
+    } catch (error) {
+      console.warn('Could not play champion voice:', error);
+    }
+  }, [volumeMultiplier]);
+
   const playDraftMusic = useCallback(() => {
     // Stop any existing draft music
     if (draftMusicSource.current) {
@@ -56,25 +87,25 @@ export function useAudio(globalVolume: number = 50, preferYouTube: boolean = tru
     if (youtubeAudioRef.current) {
       youtubeAudioRef.current.pause();
     }
-    
+
     // Remove any existing iframe
     const existingIframe = document.getElementById('youtube-draft-music');
     if (existingIframe) {
       existingIframe.remove();
     }
-    
+
     // Primary approach: Use our controllable generated music
     if (GENERATED_SOUNDS.draftMusic) {
       try {
         const adjustedVolume = 0.4 * volumeMultiplier;
         draftMusicSource.current = AudioGenerator.playBuffer(GENERATED_SOUNDS.draftMusic, adjustedVolume);
-        
+
         if (draftMusicSource.current) {
           draftMusicSource.current.loop = true;
         }
-        
+
         console.log(`Epic draft music playing at ${Math.round(volumeMultiplier * 100)}% volume`);
-        
+
         // Optional: Add YouTube music as background if user prefers it and volume is not zero
         if (preferYouTube && volumeMultiplier > 0) {
           try {
@@ -91,27 +122,50 @@ export function useAudio(globalVolume: number = 50, preferYouTube: boolean = tru
             iframe.allow = 'autoplay; encrypted-media';
             iframe.setAttribute('allowfullscreen', '');
             iframe.id = 'youtube-draft-music';
-            
+
             document.body.appendChild(iframe);
             console.log('YouTube background music added');
           } catch (youtubeError) {
             console.log('YouTube background music not available:', youtubeError);
           }
         }
-        
+
       } catch (error) {
         console.warn('Could not play draft music:', error);
       }
     }
   }, [volumeMultiplier]);
 
-  const playPickSound = useCallback(() => {
+  const playPickSound = useCallback((championId?: string) => {
+    // Play the UI pick sound effect
     playGeneratedSound(GENERATED_SOUNDS.pickSound, 0.7);
-  }, [playGeneratedSound]);
 
-  const playBanSound = useCallback(() => {
+    // Play champion-specific pick voice line
+    if (championId) {
+      const voiceUrl = getChampionPickVoiceUrl(championId);
+      if (voiceUrl) {
+        // Small delay so the pick SFX plays first, then the voice line
+        setTimeout(() => {
+          playChampionVoice(voiceUrl, 0.85);
+        }, 300);
+      }
+    }
+  }, [playGeneratedSound, playChampionVoice]);
+
+  const playBanSound = useCallback((championId?: string) => {
+    // Play the UI ban sound effect
     playGeneratedSound(GENERATED_SOUNDS.banSound, 0.8);
-  }, [playGeneratedSound]);
+
+    // Play champion-specific ban voice line
+    if (championId) {
+      const voiceUrl = getChampionBanVoiceUrl(championId);
+      if (voiceUrl) {
+        setTimeout(() => {
+          playChampionVoice(voiceUrl, 0.85);
+        }, 300);
+      }
+    }
+  }, [playGeneratedSound, playChampionVoice]);
 
   const playHoverSound = useCallback(() => {
     playGeneratedSound(GENERATED_SOUNDS.hoverSound, 0.4);
@@ -129,6 +183,12 @@ export function useAudio(globalVolume: number = 50, preferYouTube: boolean = tru
       draftMusicSource.current.stop();
       draftMusicSource.current = null;
     }
+
+    // Stop champion voice
+    if (championVoiceRef.current) {
+      championVoiceRef.current.pause();
+      championVoiceRef.current = null;
+    }
   }, []);
 
   const stopDraftMusic = useCallback(() => {
@@ -138,7 +198,7 @@ export function useAudio(globalVolume: number = 50, preferYouTube: boolean = tru
     if (youtubeAudioRef.current) {
       youtubeAudioRef.current.pause();
     }
-    
+
     // Remove YouTube iframe
     const iframe = document.getElementById('youtube-draft-music');
     if (iframe) {
@@ -152,6 +212,7 @@ export function useAudio(globalVolume: number = 50, preferYouTube: boolean = tru
     playPickSound,
     playBanSound,
     playHoverSound,
+    playChampionVoice,
     stopAllSounds,
     playSound
   };

@@ -146,12 +146,13 @@ export class DatabaseStorage implements IStorage {
           roles: championData.roles || [],
           classes: championData.tags || [],
           image: `https://ddragon.leagueoflegends.com/cdn/${datadragonVersion}/img/champion/${championData.image.full}`,
+          key: parseInt(championData.key, 10) || null,
         });
       }
 
       fs.writeFileSync(championsPath, JSON.stringify(champions, null, 2));
       this.championsCache = champions;
-      
+
       console.log(`Successfully synced ${champions.length} champions from Community Dragon (via DataDragon)`);
       return champions;
     } catch (error) {
@@ -193,12 +194,13 @@ export class DatabaseStorage implements IStorage {
           roles: championData.roles || [],
           classes: championData.tags || [],
           image: `https://ddragon.leagueoflegends.com/cdn/${datadragonVersion}/img/champion/${championData.image.full}`,
+          key: parseInt(championData.key, 10) || null,
         });
       }
 
       fs.writeFileSync(championsPath, JSON.stringify(champions, null, 2));
       this.championsCache = champions;
-      
+
       console.log(`Successfully synced ${champions.length} champions from Riot API`);
       return champions;
     } catch (error) {

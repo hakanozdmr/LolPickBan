@@ -105,11 +105,11 @@ export default function DraftSimulator() {
       if (!response.ok) throw new Error('Failed to ban champion');
       return response.json();
     },
-    onSuccess: (updatedSession) => {
+    onSuccess: (_updatedSession, bannedChampionId) => {
       queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
       setSelectedChampion(null);
-      // Play ban sound effect
-      playBanSound();
+      // Play ban sound effect + champion ban voice line
+      playBanSound(bannedChampionId || undefined);
     },
   });
 
@@ -125,11 +125,11 @@ export default function DraftSimulator() {
       if (!response.ok) throw new Error('Failed to pick champion');
       return response.json();
     },
-    onSuccess: (updatedSession) => {
+    onSuccess: (_updatedSession, pickedChampionId) => {
       queryClient.invalidateQueries({ queryKey: ['/api/draft-sessions', draftSessionId] });
       setSelectedChampion(null);
-      // Play pick sound effect
-      playPickSound();
+      // Play pick sound effect + champion pick voice line
+      playPickSound(pickedChampionId || undefined);
     },
   });
 

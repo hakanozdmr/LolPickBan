@@ -10,6 +10,7 @@ export const champions = pgTable("champions", {
   roles: jsonb("roles").$type<string[]>().notNull(),
   classes: jsonb("classes").$type<string[]>().notNull(),
   image: text("image").notNull(),
+  key: integer("key"),
 });
 
 export const draftSessions = pgTable("draft_sessions", {
