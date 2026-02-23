@@ -222,7 +222,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDraftSessionsByMatchId(matchId: string): Promise<DraftSession[]> {
-    return db.select().from(draftSessions).where(eq(draftSessions.matchId, matchId));
+    try {
+      const result = await db.select().from(draftSessions).where(eq(draftSessions.matchId, matchId));
+      return result || [];
+    } catch (error: any) {
+      if (error?.message?.includes("Cannot read properties of null")) {
+        return [];
+      }
+      throw error;
+    }
   }
 
   async getDraftSessionByTournamentId(tournamentId: string): Promise<DraftSession | undefined> {
@@ -460,7 +468,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMatches(tournamentId: string): Promise<Match[]> {
-    return db.select().from(matches).where(eq(matches.tournamentId, tournamentId));
+    try {
+      const result = await db.select().from(matches).where(eq(matches.tournamentId, tournamentId));
+      return result || [];
+    } catch (error: any) {
+      if (error?.message?.includes("Cannot read properties of null")) {
+        return [];
+      }
+      throw error;
+    }
   }
 
   async getMatch(id: string): Promise<Match | undefined> {
@@ -470,7 +486,7 @@ export class DatabaseStorage implements IStorage {
 
   async createMatch(match: InsertMatch): Promise<Match> {
     const id = randomUUID();
-    const newMatch = {
+    const insertValues: Record<string, any> = {
       id,
       tournamentId: match.tournamentId,
       team1Id: match.team1Id || null,
@@ -480,16 +496,20 @@ export class DatabaseStorage implements IStorage {
       position: match.position,
       status: match.status || "pending",
       seriesFormat: match.seriesFormat || "bo1",
-      fearlessMode: match.fearlessMode || false,
-      team1Wins: match.team1Wins || 0,
-      team2Wins: match.team2Wins || 0,
-      currentGame: match.currentGame || 1,
-      scheduledAt: match.scheduledAt || null,
-      completedAt: match.completedAt || null,
-      createdAt: new Date(),
+      fearlessMode: match.fearlessMode ?? false,
+      team1Wins: match.team1Wins ?? 0,
+      team2Wins: match.team2Wins ?? 0,
+      currentGame: match.currentGame ?? 1,
     };
-    await db.insert(matches).values(newMatch);
-    return newMatch;
+    if (match.scheduledAt instanceof Date) {
+      insertValues.scheduledAt = match.scheduledAt;
+    }
+    if (match.completedAt instanceof Date) {
+      insertValues.completedAt = match.completedAt;
+    }
+    await db.insert(matches).values(insertValues as any);
+    const created = await this.getMatch(id);
+    return created!;
   }
 
   async updateMatch(id: string, updates: Partial<Match>): Promise<Match | undefined> {
@@ -521,7 +541,7 @@ export class DatabaseStorage implements IStorage {
       if (roundMatches.length === 0) return;
 
       // Check if all matches in this round are completed and have a winner
-      const allCompleted = roundMatches.every(m => m.status === 'completed' && m.winnerId !== null);
+      const allCompleted = roundMatches.every(m => m.status === 'completed' && m.winnerId !== null && m.winnerId !== '');
       console.log(`Round ${currentRound} completion status: ${allCompleted} (${roundMatches.filter(m => m.status === 'completed').length}/${roundMatches.length} matches completed)`);
       
       if (!allCompleted) return;
@@ -530,7 +550,7 @@ export class DatabaseStorage implements IStorage {
       const winners = roundMatches
         .sort((a, b) => a.position - b.position)
         .map(m => m.winnerId)
-        .filter((id): id is string => id !== null);
+        .filter((id): id is string => id !== null && id !== '');
       
       if (winners.length < 2) {
         console.log(`Not enough winners to create next round: ${winners.length}`);

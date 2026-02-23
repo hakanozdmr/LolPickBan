@@ -253,6 +253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const matches = await storage.getMatches(req.params.tournamentId);
       res.json(matches);
     } catch (error) {
+      console.error("Failed to fetch matches:", error);
       res.status(500).json({ message: "Failed to fetch matches" });
     }
   });
@@ -260,10 +261,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tournaments/:tournamentId/matches", async (req, res) => {
     try {
       const matchData = { ...req.body, tournamentId: req.params.tournamentId };
+      if (!matchData.scheduledAt) delete matchData.scheduledAt;
+      if (!matchData.completedAt) delete matchData.completedAt;
       const validatedData = insertMatchSchema.parse(matchData);
       const match = await storage.createMatch(validatedData);
       res.status(201).json(match);
     } catch (error) {
+      console.error("Failed to create match:", error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid data", errors: error.errors });
       } else {
