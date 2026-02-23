@@ -263,11 +263,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateDraftSession(id: string, updates: Partial<DraftSession>): Promise<DraftSession | undefined> {
-    const result = await db.update(draftSessions)
+    await db.update(draftSessions)
       .set(updates)
-      .where(eq(draftSessions.id, id))
-      .returning();
-    return result[0];
+      .where(eq(draftSessions.id, id));
+    return this.getDraftSession(id);
   }
 
   async startDraft(id: string): Promise<DraftSession | undefined> {
@@ -420,11 +419,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTournament(id: string, updates: Partial<Tournament>): Promise<Tournament | undefined> {
-    const result = await db.update(tournaments)
+    await db.update(tournaments)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(tournaments.id, id))
-      .returning();
-    return result[0];
+      .where(eq(tournaments.id, id));
+    return this.getTournament(id);
   }
 
   async deleteTournament(id: string): Promise<boolean> {
@@ -455,11 +453,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined> {
-    const result = await db.update(teams)
+    await db.update(teams)
       .set(updates)
-      .where(eq(teams.id, id))
-      .returning();
-    return result[0];
+      .where(eq(teams.id, id));
+    return this.getTeam(id);
   }
 
   async deleteTeam(id: string): Promise<boolean> {
@@ -513,13 +510,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateMatch(id: string, updates: Partial<Match>): Promise<Match | undefined> {
-    const result = await db.update(matches)
-      .set(updates)
-      .where(eq(matches.id, id))
-      .returning();
+    const cleanUpdates = { ...updates };
+    if ('scheduledAt' in cleanUpdates && !(cleanUpdates.scheduledAt instanceof Date) && cleanUpdates.scheduledAt !== null) {
+      delete cleanUpdates.scheduledAt;
+    }
+    if ('completedAt' in cleanUpdates && !(cleanUpdates.completedAt instanceof Date) && cleanUpdates.completedAt !== null) {
+      delete cleanUpdates.completedAt;
+    }
+
+    await db.update(matches)
+      .set(cleanUpdates)
+      .where(eq(matches.id, id));
     
-    const updatedMatch = result[0];
-    // If the match is completed, check if the next round should be created
+    const updatedMatch = await this.getMatch(id);
     if (updatedMatch && (updates.status === 'completed' || updates.winnerId)) {
       await this.createNextRoundIfNeeded(updatedMatch.tournamentId, updatedMatch.round);
     }
@@ -743,10 +746,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async markTeamReady(id: string): Promise<TournamentTeamCode | null> {
-    const result = await db.update(tournamentTeamCodes)
+    await db.update(tournamentTeamCodes)
       .set({ isReady: true, joinedAt: new Date() })
-      .where(eq(tournamentTeamCodes.id, id))
-      .returning();
+      .where(eq(tournamentTeamCodes.id, id));
+    const result = await db.select().from(tournamentTeamCodes).where(eq(tournamentTeamCodes.id, id));
     return result[0] || null;
   }
 
